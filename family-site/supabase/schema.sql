@@ -355,10 +355,9 @@ begin
     )
     on conflict do nothing;
 
-    -- Scope all ungrouped events to the first code.
-    update public.events
-    set access_code_id = first_code_id
-    where access_code_id is null;
+    -- NOTE: Do NOT scope null events to a group here.
+    -- access_code_id = null means "visible to all authenticated users"
+    -- and should remain null so group-filter logic works correctly.
   end if;
 end $$;
 

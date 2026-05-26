@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { AccessCode, FamilyEvent, Profile, RsvpStatus } from '@/lib/types'
 import EventsClient from './events-client'
 import { icalToken } from '@/app/api/ical/[userId]/route'
@@ -40,7 +40,10 @@ export default async function EventsPage() {
   )]
   const creatorGroupMap: Record<string, string[]> = {}
   if (creatorIds.length > 0) {
-    const { data: creatorGroupRows } = await supabase
+    // Must use admin client — RLS only lets users read their own PAC rows,
+    // so the regular client returns empty results for other users' memberships.
+    const admin = createAdminClient()
+    const { data: creatorGroupRows } = await admin
       .from('profile_access_codes')
       .select('profile_id, access_code_id')
       .in('profile_id', creatorIds)
