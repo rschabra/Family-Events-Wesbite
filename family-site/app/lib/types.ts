@@ -52,3 +52,7 @@ export interface Blast {
   sent_at: string | null
   created_at: string
 }
+
+export interface RsvpWithProfile extends Rsvp {
+  profiles: { full_name: string | null }
+}

@@ -27,7 +27,7 @@ export default async function DashboardPage() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Family Events</h1>
         <form action="/auth/signout" method="post">
-          <button className="text-sm text-gray-500 hover:text-gray-900 underline">
+          <button className="text-sm text-gray-600 hover:text-gray-900 underline bg-transparent">
             Log out
           </button>
         </form>
@@ -36,20 +36,25 @@ export default async function DashboardPage() {
       <div className="rounded-lg border border-gray-200 p-5 space-y-1">
         <p className="text-lg">Hi {name} 👋</p>
         <p className="text-sm text-gray-500">
-          You&apos;re logged in and verified. The calendar and events come on
-          Day 3.
+          You&apos;re logged in. Browse events, RSVP, and create new ones.
         </p>
       </div>
 
-      <nav className="flex gap-3 text-sm">
+      <nav className="flex gap-3 text-sm flex-wrap">
+        <Link
+          href="/events"
+          className="rounded-md bg-gray-900 text-white px-3 py-2 hover:bg-gray-800"
+        >
+          View events
+        </Link>
         <Link
           href="/profile"
-          className="rounded-md border border-gray-300 px-3 py-2 hover:bg-gray-50"
+          className="rounded-md border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
         >
           Edit profile
         </Link>
         {profile?.is_admin && (
-          <span className="rounded-md bg-gray-900 text-white px-3 py-2">
+          <span className="rounded-md bg-blue-100 text-blue-800 px-3 py-2">
             Admin
           </span>
         )}

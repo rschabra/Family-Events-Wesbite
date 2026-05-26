@@ -45,7 +45,7 @@ export default function ProfileForm({
         <input
           value={email}
           disabled
-          className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+          className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 placeholder:text-gray-400"
         />
       </label>
 
@@ -54,7 +54,7 @@ export default function ProfileForm({
         <input
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+          className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
         />
       </label>
 
@@ -66,7 +66,7 @@ export default function ProfileForm({
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="+1 202 555 0123"
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+          className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
         />
       </label>
 
