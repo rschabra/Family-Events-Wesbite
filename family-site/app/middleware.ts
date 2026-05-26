@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Pages reachable WITHOUT being logged in.
-const PUBLIC_PATHS = ['/login', '/signup', '/verify', '/auth', '/api']
+const PUBLIC_PATHS = ['/login', '/signup', '/verify', '/auth', '/api', '/forgot-password', '/reset-password']
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })

@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
       token_hash: tokenHash,
     })
     if (!error) {
-      return NextResponse.redirect(`${origin}/dashboard`)
+      // Recovery tokens go to the reset-password page; everything else to dashboard.
+      const dest = type === 'recovery' ? '/reset-password' : '/dashboard'
+      return NextResponse.redirect(`${origin}${dest}`)
     }
   }
 

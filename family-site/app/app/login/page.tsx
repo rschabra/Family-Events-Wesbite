@@ -84,12 +84,19 @@ export default function LoginPage() {
           {loading ? 'Logging in…' : 'Log in'}
         </button>
 
-        <p className="text-center text-sm text-gray-500">
-          Need an account?{' '}
-          <Link href="/signup" className="text-gray-900 underline">
-            Sign up
-          </Link>
-        </p>
+        <div className="text-center space-y-1">
+          <p className="text-sm text-gray-500">
+            Need an account?{' '}
+            <Link href="/signup" className="text-gray-900 underline">
+              Sign up
+            </Link>
+          </p>
+          <p className="text-sm text-gray-500">
+            <Link href="/forgot-password" className="text-gray-500 underline">
+              Forgot password?
+            </Link>
+          </p>
+        </div>
       </div>
     </main>
   )
