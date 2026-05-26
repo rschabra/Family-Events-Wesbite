@@ -29,7 +29,7 @@ export function buildBlastHtml({
   message: string
   eventUrl: string
   eventDate: string
-  eventLocation: string
+  eventLocation: string | null
 }) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const safeMessage = message
@@ -51,7 +51,7 @@ export function buildBlastHtml({
         <tr>
           <td style="padding:32px;">
             <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">${eventTitle}</h1>
-            <p style="margin:0 0 24px;font-size:14px;color:#6b7280;">${eventDate}&nbsp;&nbsp;·&nbsp;&nbsp;${eventLocation}</p>
+            <p style="margin:0 0 24px;font-size:14px;color:#6b7280;">${eventDate}${eventLocation ? `&nbsp;&nbsp;·&nbsp;&nbsp;${eventLocation}` : ''}</p>
             <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#374151;white-space:pre-wrap;">${safeMessage}</p>
             <a href="${eventUrl}"
                style="display:inline-block;background:#111827;color:#fff;padding:11px 22px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500;">

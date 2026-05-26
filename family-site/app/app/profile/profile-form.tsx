@@ -158,7 +158,12 @@ export default function ProfileForm({
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={notifySms} onChange={(e) => setNotifySms(e.target.checked)} />
-            Text message (starts working once SMS is set up)
+            <span>
+              Text message{' '}
+              <a href="/privacy" target="_blank" className="text-gray-400 hover:text-gray-600 underline text-xs">
+                (privacy policy)
+              </a>
+            </span>
           </label>
         </fieldset>
 

@@ -1,5 +1,6 @@
 import { createAdminClient } from './supabase/server'
 import { sendEmail, buildBlastHtml } from './email'
+import { sendSms, buildSmsBody } from './sms'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -11,18 +12,27 @@ type BlastRow = {
     id: string
     title: string
     starts_at: string
-    location: string
+    location: string | null
     access_code_id: string | null
     created_by: string
   }
 }
 
 type ProfileRow = {
+  id: string
   email: string | null
+  phone: string | null
+  notify_email: boolean
+  notify_sms: boolean
 }
 
 export async function sendDueBlasts(): Promise<{ sent: number; failed: number }> {
   const admin = createAdminClient()
+  const twilioConfigured = !!(
+    process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_PHONE_NUMBER
+  )
 
   const { data: blasts, error: blastError } = await admin
     .from('blasts')
@@ -42,53 +52,45 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
   for (const blast of blasts as unknown as BlastRow[]) {
     const event = blast.events
 
-    // Recipients: members of the event's group (if scoped), otherwise everyone opted in.
-    let profilesQuery = admin
-      .from('profiles')
-      .select('email')
-      .eq('notify_email', true)
-      .not('email', 'is', null)
+    // Resolve recipient IDs based on event scope
+    let recipientIds: string[] | null = null
 
     if (event.access_code_id) {
-      // Scoped to a specific group
       const { data: members } = await admin
         .from('profile_access_codes')
         .select('profile_id')
         .eq('access_code_id', event.access_code_id)
-
-      const ids = (members ?? []).map((m: { profile_id: string }) => m.profile_id)
-      if (!ids.length) {
-        await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
-        sent++
-        continue
-      }
-      profilesQuery = profilesQuery.in('id', ids)
+      recipientIds = (members ?? []).map((m: { profile_id: string }) => m.profile_id)
     } else {
-      // "Everyone" — send to all members of the creator's groups (deduplicated)
+      // "Everyone" — members of the creator's groups
       const { data: creatorGroups } = await admin
         .from('profile_access_codes')
         .select('access_code_id')
         .eq('profile_id', event.created_by)
-
       const creatorGroupIds = (creatorGroups ?? []).map((g: { access_code_id: string }) => g.access_code_id)
-      if (!creatorGroupIds.length) {
-        await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
-        sent++
-        continue
+      if (creatorGroupIds.length > 0) {
+        const { data: members } = await admin
+          .from('profile_access_codes')
+          .select('profile_id')
+          .in('access_code_id', creatorGroupIds)
+        recipientIds = [...new Set((members ?? []).map((m: { profile_id: string }) => m.profile_id))]
+      } else {
+        recipientIds = []
       }
+    }
 
-      const { data: members } = await admin
-        .from('profile_access_codes')
-        .select('profile_id')
-        .in('access_code_id', creatorGroupIds)
+    if (recipientIds !== null && recipientIds.length === 0) {
+      await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
+      sent++
+      continue
+    }
 
-      const ids = [...new Set((members ?? []).map((m: { profile_id: string }) => m.profile_id))]
-      if (!ids.length) {
-        await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
-        sent++
-        continue
-      }
-      profilesQuery = profilesQuery.in('id', ids)
+    let profilesQuery = admin
+      .from('profiles')
+      .select('id, email, phone, notify_email, notify_sms')
+
+    if (recipientIds !== null) {
+      profilesQuery = profilesQuery.in('id', recipientIds)
     }
 
     const { data: profiles, error: profileError } = await profilesQuery
@@ -109,23 +111,40 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
       day: 'numeric',
       year: 'numeric',
     })
+    const eventUrl = `${SITE_URL}/events/${event.id}`
     const subject = `${blast.kind === 'reminder' ? 'Reminder: ' : ''}${event.title}`
     const html = buildBlastHtml({
       eventTitle: event.title,
       message: blast.message,
-      eventUrl: `${SITE_URL}/events/${event.id}`,
+      eventUrl,
       eventDate,
       eventLocation: event.location,
+    })
+    const smsBody = buildSmsBody({
+      eventTitle: event.title,
+      message: blast.message,
+      eventDate,
+      eventLocation: event.location,
+      eventUrl,
     })
 
     let anyFailed = false
     for (const profile of profiles as ProfileRow[]) {
-      if (!profile.email) continue
-      try {
-        await sendEmail({ to: profile.email, subject, html })
-      } catch (err) {
-        console.error(`sendDueBlasts: failed to send to ${profile.email}`, err)
-        anyFailed = true
+      if (profile.notify_email && profile.email) {
+        try {
+          await sendEmail({ to: profile.email, subject, html })
+        } catch (err) {
+          console.error(`sendDueBlasts: email failed for ${profile.email}`, err)
+          anyFailed = true
+        }
+      }
+      if (twilioConfigured && profile.notify_sms && profile.phone) {
+        try {
+          await sendSms({ to: profile.phone, body: smsBody })
+        } catch (err) {
+          console.error(`sendDueBlasts: SMS failed for ${profile.phone}`, err)
+          anyFailed = true
+        }
       }
     }
 
