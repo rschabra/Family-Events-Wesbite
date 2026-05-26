@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendDueBlasts } from '@/lib/sendBlasts'
 import type { FamilyEvent } from '@/lib/types'
 
 export async function GET() {
@@ -63,7 +64,6 @@ export async function POST(request: Request) {
 
   if (eventError) return NextResponse.json({ error: eventError.message }, { status: 500 })
 
-  // Create the required announcement blast (sent on Day 4)
   await supabase.from('blasts').insert({
     event_id: event.id,
     created_by: user.id,
@@ -72,6 +72,9 @@ export async function POST(request: Request) {
     message: announcement.trim(),
     send_at: new Date().toISOString(),
   })
+
+  // Send the announcement blast immediately
+  await sendDueBlasts()
 
   return NextResponse.json({ event }, { status: 201 })
 }

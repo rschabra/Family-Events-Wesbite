@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation'
 import type { FamilyEvent, RsvpStatus, RsvpWithProfile } from '@/lib/types'
 import EventModal from '../event-modal'
 
+function localDatetimeNow() {
+  const d = new Date()
+  d.setSeconds(0, 0)
+  return d.toISOString().slice(0, 16)
+}
+
 function formatDatetime(iso: string) {
   const d = new Date(iso)
   return d.toLocaleDateString('en-US', {
@@ -44,6 +50,15 @@ export default function EventDetailClient({
   const [editOpen, setEditOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+
+  const [blastOpen, setBlastOpen] = useState(false)
+  const [blastKind, setBlastKind] = useState<'reminder' | 'update'>('reminder')
+  const [blastMessage, setBlastMessage] = useState('')
+  const [blastScheduled, setBlastScheduled] = useState(false)
+  const [blastSendAt, setBlastSendAt] = useState(localDatetimeNow)
+  const [blastSending, setBlastSending] = useState(false)
+  const [blastResult, setBlastResult] = useState<'sent' | 'scheduled' | 'error' | null>(null)
+  const [blastError, setBlastError] = useState('')
 
   async function saveRsvp(status: RsvpStatus, size: number) {
     setRsvpSaving(true)
@@ -85,6 +100,31 @@ export default function EventDetailClient({
     }
 
     router.push('/events')
+  }
+
+  async function sendBlast() {
+    if (!blastMessage.trim()) return
+    setBlastSending(true)
+    setBlastResult(null)
+    setBlastError('')
+
+    const send_at = blastScheduled ? new Date(blastSendAt).toISOString() : undefined
+    const res = await fetch('/api/blasts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_id: event.id, message: blastMessage, kind: blastKind, send_at }),
+    })
+
+    if (!res.ok) {
+      const json = await res.json()
+      setBlastError(json.error ?? 'Could not send blast.')
+      setBlastResult('error')
+    } else {
+      setBlastResult(blastScheduled ? 'scheduled' : 'sent')
+      setBlastMessage('')
+      setBlastScheduled(false)
+    }
+    setBlastSending(false)
   }
 
   const goingRsvps = rsvps.filter((r) => r.status === 'yes')
@@ -204,11 +244,11 @@ export default function EventDetailClient({
         )}
       </section>
 
-      {/* Edit / Delete — only for creator or admin */}
+      {/* Edit / Delete / Blast — only for creator or admin */}
       {canEdit && (
         <>
           <hr className="border-gray-100" />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <button
               onClick={() => setEditOpen(true)}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -222,8 +262,81 @@ export default function EventDetailClient({
             >
               {deleting ? 'Deleting…' : 'Delete event'}
             </button>
+            <button
+              onClick={() => { setBlastOpen((o) => !o); setBlastResult(null) }}
+              className="rounded-md border border-blue-200 text-blue-700 px-4 py-2 text-sm hover:bg-blue-50"
+            >
+              {blastOpen ? 'Cancel blast' : 'Send a blast'}
+            </button>
             {deleteError && <p className="text-xs text-red-600">{deleteError}</p>}
           </div>
+
+          {blastOpen && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900">Send email blast</h3>
+
+              <div className="flex gap-2">
+                {(['reminder', 'update'] as const).map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => setBlastKind(k)}
+                    className={`rounded-md border px-3 py-1 text-xs font-medium transition-colors ${
+                      blastKind === k
+                        ? 'bg-gray-900 border-gray-900 text-white'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {k === 'reminder' ? 'Reminder' : 'Update'}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={blastMessage}
+                onChange={(e) => setBlastMessage(e.target.value)}
+                placeholder={blastKind === 'reminder' ? 'e.g. Don\'t forget — see you Saturday!' : 'e.g. Venue changed to the park.'}
+                rows={3}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none resize-none"
+              />
+
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={blastScheduled}
+                  onChange={(e) => setBlastScheduled(e.target.checked)}
+                  className="rounded"
+                />
+                Schedule for later
+              </label>
+
+              {blastScheduled && (
+                <input
+                  type="datetime-local"
+                  value={blastSendAt}
+                  onChange={(e) => setBlastSendAt(e.target.value)}
+                  className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+                />
+              )}
+
+              <button
+                onClick={sendBlast}
+                disabled={blastSending || !blastMessage.trim()}
+                className="rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+              >
+                {blastSending ? 'Sending…' : blastScheduled ? 'Schedule blast' : 'Send now'}
+              </button>
+
+              {blastResult === 'sent' && (
+                <p className="text-xs text-green-600">Blast sent to all family members.</p>
+              )}
+              {blastResult === 'scheduled' && (
+                <p className="text-xs text-green-600">Blast scheduled successfully.</p>
+              )}
+              {blastResult === 'error' && (
+                <p className="text-xs text-red-600">{blastError || 'Could not send blast.'}</p>
+              )}
+            </div>
+          )}
         </>
       )}
 
