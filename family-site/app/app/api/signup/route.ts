@@ -100,5 +100,15 @@ export async function POST(request: Request) {
     )
   }
 
+  // Link the new user to the group they signed up with.
+  // The DB trigger already created the profile row synchronously, so it's safe to insert here.
+  const { data: newUser } = await supabase.auth.getUser()
+  if (newUser.user) {
+    await admin.from('profile_access_codes').upsert({
+      profile_id: newUser.user.id,
+      access_code_id: codeRow.id,
+    }, { onConflict: 'profile_id,access_code_id', ignoreDuplicates: true })
+  }
+
   return NextResponse.json({ ok: true })
 }

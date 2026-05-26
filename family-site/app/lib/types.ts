@@ -18,6 +18,20 @@ export interface Profile {
   created_at: string
 }
 
+export interface AccessCode {
+  id: string
+  code: string
+  name: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface ProfileAccessCode {
+  profile_id: string
+  access_code_id: string
+  joined_at: string
+}
+
 export interface FamilyEvent {
   id: string
   title: string
@@ -26,6 +40,7 @@ export interface FamilyEvent {
   starts_at: string
   ends_at: string | null
   created_by: string
+  access_code_id: string | null
   created_at: string
   updated_at: string
 }

@@ -33,6 +33,7 @@ export async function POST(request: Request) {
     starts_at?: string
     ends_at?: string | null
     announcement?: string
+    access_code_id?: string | null
   }
 
   try {
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   }
 
-  const { title, description, location, starts_at, ends_at, announcement } = body
+  const { title, description, location, starts_at, ends_at, announcement, access_code_id } = body
   if (!title || !description || !location || !starts_at || !announcement) {
     return NextResponse.json(
       { error: 'Title, description, location, start time, and announcement message are required.' },
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
       starts_at,
       ends_at: ends_at || null,
       created_by: user.id,
+      access_code_id: access_code_id ?? null,
     })
     .select()
     .single<FamilyEvent>()

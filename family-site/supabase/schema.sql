@@ -34,6 +34,7 @@ create table if not exists public.profiles (
 create table if not exists public.access_codes (
   id          uuid primary key default gen_random_uuid(),
   code        text not null unique,
+  name        text not null default 'Family',
   is_active   boolean not null default true,
   created_at  timestamptz not null default now()
 );
@@ -238,9 +239,122 @@ create policy "access_codes: admin manage"
 -- 9. SEED DATA
 -- Insert a starter family code. CHANGE THIS VALUE before sharing.
 -- =============================================================
-insert into public.access_codes (code, is_active)
-values ('CHANGE-ME-2026', true)
+insert into public.access_codes (code, is_active, name)
+values ('CHANGE-ME-2026', true, 'Family')
 on conflict (code) do nothing;
+
+-- Back-fill name for any existing seed row that has no name yet.
+update public.access_codes set name = 'Family' where name is null;
+
+-- =============================================================
+-- 10. MULTIPLE GROUPS (Day 4+)
+-- Users can belong to multiple groups. Each group is an access code.
+-- Events can optionally be scoped to one group; null = visible to all.
+-- =============================================================
+
+-- 10a. Add human-readable name to access_codes.
+alter table public.access_codes add column if not exists name text not null default 'Family';
+
+-- 10b. Junction table: which profiles belong to which access codes.
+create table if not exists public.profile_access_codes (
+  profile_id     uuid not null references public.profiles(id) on delete cascade,
+  access_code_id uuid not null references public.access_codes(id) on delete cascade,
+  joined_at      timestamptz not null default now(),
+  primary key (profile_id, access_code_id)
+);
+
+create index if not exists pac_profile_idx on public.profile_access_codes (profile_id);
+
+-- 10c. Scope events to a group (null = everyone in any of the user's groups).
+alter table public.events add column if not exists access_code_id uuid
+  references public.access_codes(id) on delete set null;
+
+-- =============================================================
+-- 11. UPDATED RLS FOR GROUPS
+-- =============================================================
+
+-- access_codes: users can read codes they belong to; admins read all.
+drop policy if exists "access_codes: admin manage" on public.access_codes;
+drop policy if exists "access_codes: read own" on public.access_codes;
+
+create policy "access_codes: read own"
+  on public.access_codes for select
+  using (
+    public.is_admin()
+    or exists (
+      select 1 from public.profile_access_codes
+      where access_code_id = access_codes.id
+        and profile_id = auth.uid()
+    )
+  );
+
+create policy "access_codes: admin manage"
+  on public.access_codes for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- profile_access_codes: users manage their own membership rows.
+alter table public.profile_access_codes enable row level security;
+
+drop policy if exists "pac: read own" on public.profile_access_codes;
+create policy "pac: read own"
+  on public.profile_access_codes for select
+  using (profile_id = auth.uid() or public.is_admin());
+
+drop policy if exists "pac: insert own" on public.profile_access_codes;
+create policy "pac: insert own"
+  on public.profile_access_codes for insert
+  with check (profile_id = auth.uid());
+
+drop policy if exists "pac: delete own" on public.profile_access_codes;
+create policy "pac: delete own"
+  on public.profile_access_codes for delete
+  using (profile_id = auth.uid());
+
+-- events: visible if unscoped (null) OR the user is in the event's group.
+drop policy if exists "events: read all" on public.events;
+create policy "events: read all"
+  on public.events for select using (
+    auth.uid() is not null
+    and (
+      access_code_id is null
+      or exists (
+        select 1 from public.profile_access_codes pac
+        where pac.profile_id = auth.uid()
+          and pac.access_code_id = events.access_code_id
+      )
+    )
+  );
+
+-- =============================================================
+-- 12. MIGRATION: link existing data to the first active code.
+-- Safe to re-run — uses ON CONFLICT DO NOTHING.
+-- =============================================================
+do $$ declare first_code_id uuid;
+begin
+  select id into first_code_id
+  from public.access_codes
+  where is_active = true
+  order by created_at
+  limit 1;
+
+  if first_code_id is not null then
+    -- Link all existing profiles that are not yet in any group.
+    insert into public.profile_access_codes (profile_id, access_code_id)
+    select p.id, first_code_id
+    from public.profiles p
+    where not exists (
+      select 1 from public.profile_access_codes pac
+      where pac.profile_id = p.id
+    )
+    on conflict do nothing;
+
+    -- Scope all ungrouped events to the first code.
+    update public.events
+    set access_code_id = first_code_id
+    where access_code_id is null;
+  end if;
+end $$;
 
 -- =============================================================
 -- DONE. Next: make yourself an admin after you sign up by running:

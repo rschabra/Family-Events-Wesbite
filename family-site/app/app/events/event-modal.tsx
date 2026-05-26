@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { FamilyEvent } from '@/lib/types'
+import type { AccessCode, FamilyEvent } from '@/lib/types'
 
 function toDatetimeLocal(iso: string | null | undefined): string {
   if (!iso) return ''
@@ -14,12 +14,14 @@ export default function EventModal({
   open,
   event,
   initialDate,
+  groups,
   onClose,
   onSuccess,
 }: {
   open: boolean
   event: FamilyEvent | null
-  initialDate?: string   // "YYYY-MM-DD" — pre-fills start/end when creating from a day click
+  initialDate?: string
+  groups?: AccessCode[]
   onClose: () => void
   onSuccess: () => void
 }) {
@@ -31,10 +33,10 @@ export default function EventModal({
   const [startsAt, setStartsAt] = useState('')
   const [endsAt, setEndsAt] = useState('')
   const [announcement, setAnnouncement] = useState('')
+  const [accessCodeId, setAccessCodeId] = useState<string>('')
   const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
-  // Reset fields when the modal opens or the target event/date changes
   useEffect(() => {
     if (open) {
       setTitle(event?.title ?? '')
@@ -43,18 +45,21 @@ export default function EventModal({
       if (event) {
         setStartsAt(toDatetimeLocal(event.starts_at))
         setEndsAt(toDatetimeLocal(event.ends_at))
+        setAccessCodeId(event.access_code_id ?? '')
       } else if (initialDate) {
         setStartsAt(`${initialDate}T12:00`)
         setEndsAt(`${initialDate}T23:59`)
+        setAccessCodeId(groups?.[0]?.id ?? '')
       } else {
         setStartsAt('')
         setEndsAt('')
+        setAccessCodeId(groups?.[0]?.id ?? '')
       }
       setAnnouncement('')
       setStatus('idle')
       setErrorMsg('')
     }
-  }, [open, event, initialDate])
+  }, [open, event, initialDate, groups])
 
   // If user picks only a date (no time) in the datetime-local input, fill in noon
   function handleDateTimeChange(val: string, setter: (v: string) => void) {
@@ -72,7 +77,7 @@ export default function EventModal({
 
     const body = isEditing
       ? { title, description, location, starts_at: new Date(startsAt).toISOString(), ends_at: endsAt ? new Date(endsAt).toISOString() : null }
-      : { title, description, location, starts_at: new Date(startsAt).toISOString(), ends_at: endsAt ? new Date(endsAt).toISOString() : null, announcement }
+      : { title, description, location, starts_at: new Date(startsAt).toISOString(), ends_at: endsAt ? new Date(endsAt).toISOString() : null, announcement, access_code_id: accessCodeId || null }
 
     const res = await fetch(
       isEditing ? `/api/events/${event.id}` : '/api/events',
@@ -179,11 +184,31 @@ export default function EventModal({
             </label>
           </div>
 
+          {groups && groups.length > 0 && (
+            <label className="block">
+              <span className="text-sm text-gray-700">Group</span>
+              <select
+                value={accessCodeId}
+                onChange={(e) => setAccessCodeId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+              >
+                <option value="">Everyone (all your groups)</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
           {!isEditing && (
             <label className="block">
               <span className="text-sm text-gray-700">
                 Announcement message
-                <span className="text-gray-400 font-normal"> — sent to the family via email</span>
+                <span className="text-gray-400 font-normal">
+                  {accessCodeId && groups
+                    ? ` — sent to ${groups.find((g) => g.id === accessCodeId)?.name ?? 'group'} via email`
+                    : ' — sent to all your groups via email'}
+                </span>
               </span>
               <textarea
                 required

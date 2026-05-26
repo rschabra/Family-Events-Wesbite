@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { FamilyEvent, RsvpStatus } from '@/lib/types'
+import type { AccessCode, FamilyEvent, RsvpStatus } from '@/lib/types'
 import EventModal from './event-modal'
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -90,11 +90,13 @@ export default function EventsClient({
   userId,
   isAdmin,
   myRsvps,
+  groups,
 }: {
   events: FamilyEvent[]
   userId: string
   isAdmin: boolean
   myRsvps: Record<string, RsvpStatus>
+  groups: AccessCode[]
 }) {
   const router = useRouter()
   const today = new Date()
@@ -105,6 +107,8 @@ export default function EventsClient({
   )
   const [modalOpen, setModalOpen] = useState(false)
   const [initialDate, setInitialDate] = useState<string | undefined>(undefined)
+  // null = all groups
+  const [groupFilter, setGroupFilter] = useState<string | null>(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -122,6 +126,10 @@ export default function EventsClient({
     router.refresh()
   }
 
+  const visibleEvents = groupFilter
+    ? events.filter((e) => e.access_code_id === groupFilter || e.access_code_id === null)
+    : events
+
   return (
     <div className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-4">
       {/* Header */}
@@ -134,6 +142,35 @@ export default function EventsClient({
           + New event
         </button>
       </header>
+
+      {/* Group filter chips */}
+      {groups.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setGroupFilter(null)}
+            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+              groupFilter === null
+                ? 'bg-gray-900 text-white border-gray-900'
+                : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            All groups
+          </button>
+          {groups.map((g) => (
+            <button
+              key={g.id}
+              onClick={() => setGroupFilter(g.id)}
+              className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                groupFilter === g.id
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {g.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* View toggle + month nav */}
       <div className="flex items-center gap-4 flex-wrap">
@@ -176,18 +213,19 @@ export default function EventsClient({
           calendarDays={calendarDays}
           month={month}
           today={today}
-          events={events}
+          events={visibleEvents}
           myRsvps={myRsvps}
           onDayClick={openCreate}
         />
       ) : (
-        <ListView events={events} today={today} myRsvps={myRsvps} />
+        <ListView events={visibleEvents} today={today} myRsvps={myRsvps} />
       )}
 
       <EventModal
         open={modalOpen}
         event={null}
         initialDate={initialDate}
+        groups={groups}
         onClose={() => { setModalOpen(false); setInitialDate(undefined) }}
         onSuccess={onModalSuccess}
       />

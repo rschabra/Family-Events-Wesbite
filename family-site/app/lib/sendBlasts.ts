@@ -12,6 +12,7 @@ type BlastRow = {
     title: string
     starts_at: string
     location: string
+    access_code_id: string | null
   }
 }
 
@@ -24,7 +25,7 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
 
   const { data: blasts, error: blastError } = await admin
     .from('blasts')
-    .select('id, message, kind, events(id, title, starts_at, location)')
+    .select('id, message, kind, events(id, title, starts_at, location, access_code_id)')
     .eq('status', 'scheduled')
     .lte('send_at', new Date().toISOString())
 
@@ -34,31 +35,54 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
   }
   if (!blasts?.length) return { sent: 0, failed: 0 }
 
-  const { data: profiles, error: profileError } = await admin
-    .from('profiles')
-    .select('email')
-    .eq('notify_email', true)
-    .not('email', 'is', null)
-
-  if (profileError) {
-    console.error('sendDueBlasts: failed to fetch profiles', profileError)
-    return { sent: 0, failed: 0 }
-  }
-  if (!profiles?.length) return { sent: 0, failed: 0 }
-
   let sent = 0
   let failed = 0
 
   for (const blast of blasts as unknown as BlastRow[]) {
     const event = blast.events
+
+    // Recipients: members of the event's group (if scoped), otherwise everyone opted in.
+    let profilesQuery = admin
+      .from('profiles')
+      .select('email')
+      .eq('notify_email', true)
+      .not('email', 'is', null)
+
+    if (event.access_code_id) {
+      const { data: members } = await admin
+        .from('profile_access_codes')
+        .select('profile_id')
+        .eq('access_code_id', event.access_code_id)
+
+      const ids = (members ?? []).map((m: { profile_id: string }) => m.profile_id)
+      if (!ids.length) {
+        // No members in group — mark sent and skip
+        await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
+        sent++
+        continue
+      }
+      profilesQuery = profilesQuery.in('id', ids)
+    }
+
+    const { data: profiles, error: profileError } = await profilesQuery
+    if (profileError) {
+      console.error('sendDueBlasts: failed to fetch profiles', profileError)
+      failed++
+      continue
+    }
+    if (!profiles?.length) {
+      await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
+      sent++
+      continue
+    }
+
     const eventDate = new Date(event.starts_at).toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
       year: 'numeric',
     })
-    const isReminder = blast.kind === 'reminder'
-    const subject = `${isReminder ? 'Reminder: ' : ''}${event.title}`
+    const subject = `${blast.kind === 'reminder' ? 'Reminder: ' : ''}${event.title}`
     const html = buildBlastHtml({
       eventTitle: event.title,
       message: blast.message,
