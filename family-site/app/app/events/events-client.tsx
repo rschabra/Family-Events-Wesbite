@@ -197,7 +197,24 @@ export default function EventsClient({
             >
               ‹
             </button>
-            <span className="font-medium text-gray-900 w-40 text-center">{monthLabel}</span>
+            <select
+              value={month}
+              onChange={(e) => setCurrentDate(new Date(year, Number(e.target.value), 1))}
+              className="rounded px-1 py-1 text-sm font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-gray-300 cursor-pointer"
+            >
+              {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
+                <option key={m} value={i}>{m}</option>
+              ))}
+            </select>
+            <select
+              value={year}
+              onChange={(e) => setCurrentDate(new Date(Number(e.target.value), month, 1))}
+              className="rounded px-1 py-1 text-sm font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-gray-300 cursor-pointer"
+            >
+              {Array.from({ length: 8 }, (_, i) => today.getFullYear() - 1 + i).map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
             <button
               onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
               className="px-2 py-1 rounded text-gray-600 hover:bg-gray-100"
