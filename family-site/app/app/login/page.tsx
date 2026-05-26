@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -41,10 +42,10 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex-1 flex items-center justify-center p-6">
+    <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-semibold">Welcome back</h1>
+        <div className="flex justify-center">
+          <Image src="/logo.png" alt="OurFamCalendar" width={160} height={160} className="w-40 h-auto" />
         </div>
 
         <div className="space-y-3">

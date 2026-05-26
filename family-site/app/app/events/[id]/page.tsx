@@ -40,7 +40,7 @@ export default async function EventPage({
   if (eventError || !event) notFound()
 
   return (
-    <main className="flex-1 p-6 max-w-2xl mx-auto w-full space-y-6">
+    <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-6">
       <Link href="/events" className="text-sm text-gray-400 hover:text-gray-700">
         ← All events
       </Link>

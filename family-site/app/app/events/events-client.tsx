@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { AccessCode, FamilyEvent, RsvpStatus } from '@/lib/types'
@@ -102,6 +102,9 @@ export default function EventsClient({
   const today = new Date()
 
   const [view, setView] = useState<'month' | 'list'>('month')
+  useEffect(() => {
+    if (window.innerWidth < 768) setView('list')
+  }, [])
   const [currentDate, setCurrentDate] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   )
@@ -130,7 +133,7 @@ export default function EventsClient({
     : events
 
   return (
-    <div className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-4">
+    <div className="flex-1 p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-4">
       {/* Header */}
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Calendar</h1>
@@ -287,7 +290,7 @@ function MonthView({
             <div
               key={i}
               onClick={() => onDayClick(day)}
-              className={`min-h-20 p-1 cursor-pointer ${isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'}`}
+              className={`min-h-14 sm:min-h-28 p-1 cursor-pointer ${isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'}`}
             >
               <div
                 className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${

@@ -46,7 +46,7 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="flex-1 flex items-center justify-center p-6">
+    <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-semibold">Join the family site</h1>
