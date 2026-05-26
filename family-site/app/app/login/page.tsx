@@ -45,7 +45,6 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-semibold">Welcome back</h1>
-          <p className="text-sm text-gray-500">Log in to the family site.</p>
         </div>
 
         <div className="space-y-3">
