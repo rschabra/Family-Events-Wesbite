@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { FamilyEvent, RsvpStatus, RsvpWithProfile } from '@/lib/types'
+import type { Blast, FamilyEvent, RsvpStatus, RsvpWithProfile } from '@/lib/types'
 import EventModal from '../event-modal'
 
 function localDatetimeNow() {
@@ -28,11 +28,13 @@ function formatTime(iso: string) {
 export default function EventDetailClient({
   event,
   rsvps,
+  blasts,
   userId,
   isAdmin,
 }: {
   event: FamilyEvent
   rsvps: RsvpWithProfile[]
+  blasts: Blast[]
   userId: string
   isAdmin: boolean
 }) {
@@ -337,6 +339,44 @@ export default function EventDetailClient({
               )}
             </div>
           )}
+        </>
+      )}
+
+      {/* Blast history — visible to creator/admin */}
+      {canEdit && blasts.length > 0 && (
+        <>
+          <hr className="border-gray-100" />
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold text-gray-900">Blasts sent</h2>
+            <div className="space-y-2">
+              {blasts.map((b) => (
+                <div
+                  key={b.id}
+                  className="rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-xs space-y-1"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 font-medium ${
+                      b.status === 'sent'
+                        ? 'bg-green-100 text-green-700'
+                        : b.status === 'failed'
+                        ? 'bg-red-100 text-red-600'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {b.status}
+                    </span>
+                    <span className="text-gray-500 capitalize">{b.kind}</span>
+                    <span className="text-gray-400 ml-auto">
+                      {new Date(b.send_at).toLocaleString('en-US', {
+                        month: 'short', day: 'numeric',
+                        hour: 'numeric', minute: '2-digit', hour12: true,
+                      })}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 line-clamp-2">{b.message}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </>
       )}
 

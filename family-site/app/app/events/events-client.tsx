@@ -126,18 +126,13 @@ export default function EventsClient({
     <div className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-4">
       {/* Header */}
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Family Events</h1>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-800 underline">
-            Dashboard
-          </Link>
-          <button
-            onClick={() => openCreate()}
-            className="rounded-md bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-gray-800"
-          >
-            + New event
-          </button>
-        </div>
+        <h1 className="text-xl font-semibold text-gray-900">Calendar</h1>
+        <button
+          onClick={() => openCreate()}
+          className="rounded-md bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-gray-800"
+        >
+          + New event
+        </button>
       </header>
 
       {/* View toggle + month nav */}

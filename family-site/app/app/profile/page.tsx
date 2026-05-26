@@ -1,7 +1,6 @@
 // Profile page. Server component loads the profile, then hands it to a
 // client form for editing.
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import type { Profile } from '@/lib/types'
 import ProfileForm from './profile-form'
@@ -32,12 +31,7 @@ export default async function ProfilePage() {
 
   return (
     <main className="flex-1 p-6 max-w-md mx-auto w-full space-y-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Your profile</h1>
-        <Link href="/dashboard" className="text-sm text-gray-500 underline">
-          Back
-        </Link>
-      </header>
+      <h1 className="text-xl font-semibold text-gray-900">Your profile</h1>
       <ProfileForm profile={profile} email={user.email ?? ''} />
     </main>
   )
