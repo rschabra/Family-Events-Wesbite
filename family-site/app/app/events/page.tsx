@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { AccessCode, FamilyEvent, Profile, RsvpStatus } from '@/lib/types'
 import EventsClient from './events-client'
+import { icalToken } from '@/app/api/ical/[userId]/route'
 
 export default async function EventsPage() {
   const supabase = await createClient()
@@ -31,6 +32,9 @@ export default async function EventsPage() {
     .map((r) => r.access_codes)
     .filter(Boolean) as unknown as AccessCode[]
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const icalUrl = `${siteUrl}/api/ical/${user.id}?t=${icalToken(user.id)}`
+
   return (
     <main className="flex-1 flex flex-col min-h-0">
       <EventsClient
@@ -39,6 +43,7 @@ export default async function EventsPage() {
         isAdmin={profile?.is_admin ?? false}
         myRsvps={myRsvps}
         groups={groups}
+        icalUrl={icalUrl}
       />
     </main>
   )

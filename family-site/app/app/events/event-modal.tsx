@@ -88,12 +88,15 @@ export default function EventModal({
     let body: Record<string, unknown>
 
     if (isEditing) {
+      const editingHoliday = event?.event_type === 'holiday'
       body = {
         title,
-        description: description || null,
-        location: location || null,
-        starts_at: new Date(startsAt).toISOString(),
-        ends_at: endsAt ? new Date(endsAt).toISOString() : null,
+        description: editingHoliday ? null : (description || null),
+        location: editingHoliday ? null : (location || null),
+        starts_at: editingHoliday
+          ? new Date(`${holidayDate}T12:00:00`).toISOString()
+          : new Date(startsAt).toISOString(),
+        ends_at: editingHoliday ? null : (endsAt ? new Date(endsAt).toISOString() : null),
       }
     } else if (eventType === 'holiday') {
       // Use noon UTC on the selected date so the calendar renders on the right day
@@ -240,7 +243,7 @@ export default function EventModal({
           )}
 
           {/* Holiday date picker */}
-          {!isEditing && eventType === 'holiday' && (
+          {((!isEditing && eventType === 'holiday') || (isEditing && event?.event_type === 'holiday')) && (
             <label className="block">
               <span className="text-sm text-gray-700">Date</span>
               <input

@@ -28,9 +28,9 @@ export async function PATCH(
   }
 
   const { title, description, location, starts_at, ends_at } = body
-  if (!title || !description || !location || !starts_at) {
+  if (!title || !starts_at) {
     return NextResponse.json(
-      { error: 'Title, description, location, and start time are required.' },
+      { error: 'Title and start time are required.' },
       { status: 400 }
     )
   }
@@ -40,8 +40,8 @@ export async function PATCH(
     .from('events')
     .update({
       title: title.trim(),
-      description: description.trim(),
-      location: location.trim(),
+      description: description?.trim() ?? null,
+      location: location?.trim() ?? null,
       starts_at,
       ends_at: ends_at || null,
     })

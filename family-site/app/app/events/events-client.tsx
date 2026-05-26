@@ -91,12 +91,14 @@ export default function EventsClient({
   isAdmin,
   myRsvps,
   groups,
+  icalUrl,
 }: {
   events: FamilyEvent[]
   userId: string
   isAdmin: boolean
   myRsvps: Record<string, RsvpStatus>
   groups: AccessCode[]
+  icalUrl: string
 }) {
   const router = useRouter()
   const today = new Date()
@@ -105,6 +107,15 @@ export default function EventsClient({
   useEffect(() => {
     if (window.innerWidth < 768) setView('list')
   }, [])
+
+  const [syncOpen, setSyncOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function copyIcalUrl() {
+    navigator.clipboard.writeText(icalUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
   const [currentDate, setCurrentDate] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   )
@@ -137,12 +148,56 @@ export default function EventsClient({
       {/* Header */}
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Calendar</h1>
-        <button
-          onClick={() => openCreate()}
-          className="rounded-md bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-gray-800"
-        >
-          + New event
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Sync to calendar */}
+          <div className="relative">
+            <button
+              onClick={() => setSyncOpen((o) => !o)}
+              title="Sync to calendar"
+              className="rounded-md border border-gray-300 p-2 text-gray-600 hover:bg-gray-100"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+            {syncOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setSyncOpen(false)} />
+                <div className="absolute right-0 mt-2 w-[min(18rem,calc(100vw-2rem))] z-20 rounded-lg border border-gray-200 bg-white shadow-lg p-4 space-y-3">
+                  <p className="text-sm font-medium text-gray-900">Sync to your calendar</p>
+                  <p className="text-xs text-gray-500">Subscribe in Apple Calendar, Google Calendar, or any ICS-compatible app.</p>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={icalUrl}
+                      className="flex-1 min-w-0 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-mono text-gray-600 truncate"
+                    />
+                    <button
+                      onClick={copyIcalUrl}
+                      className="shrink-0 rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100"
+                    >
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <a
+                    href={icalUrl.replace(/^https?:/, 'webcal:')}
+                    className="block text-sm text-blue-600 hover:underline"
+                    onClick={() => setSyncOpen(false)}
+                  >
+                    Open in Apple Calendar →
+                  </a>
+                </div>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => openCreate()}
+            className="rounded-md bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-gray-800"
+          >
+            + New event
+          </button>
+        </div>
       </header>
 
       {/* Group filter chips */}
