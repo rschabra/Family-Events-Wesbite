@@ -128,22 +128,22 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
       eventUrl,
     })
 
-    let anyFailed = false
+    let emailFailed = false
     for (const profile of profiles as ProfileRow[]) {
       if (profile.notify_email && profile.email) {
         try {
           await sendEmail({ to: profile.email, subject, html })
         } catch (err) {
           console.error(`sendDueBlasts: email failed for ${profile.email}`, err)
-          anyFailed = true
+          emailFailed = true
         }
       }
       if (twilioConfigured && profile.notify_sms && profile.phone) {
         try {
           await sendSms({ to: profile.phone, body: smsBody })
         } catch (err) {
+          // SMS failure doesn't fail the blast — email is the primary channel
           console.error(`sendDueBlasts: SMS failed for ${profile.phone}`, err)
-          anyFailed = true
         }
       }
     }
@@ -151,12 +151,12 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
     await admin
       .from('blasts')
       .update({
-        status: anyFailed ? 'failed' : 'sent',
+        status: emailFailed ? 'failed' : 'sent',
         sent_at: new Date().toISOString(),
       })
       .eq('id', blast.id)
 
-    if (anyFailed) failed++
+    if (emailFailed) failed++
     else sent++
   }
 
