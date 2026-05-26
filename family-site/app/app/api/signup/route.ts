@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         { status: 409 }
       )
     }
-    if (msg.includes('rate') || msg.includes('limit')) {
+    if (msg.includes('rate limit') || msg.includes('over_email_send_rate_limit') || msg.includes('too many')) {
       return NextResponse.json(
         { error: 'Too many signups right now. Please wait a few minutes.' },
         { status: 429 }
