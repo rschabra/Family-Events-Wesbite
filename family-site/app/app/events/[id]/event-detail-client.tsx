@@ -40,6 +40,7 @@ export default function EventDetailClient({
 }) {
   const router = useRouter()
 
+  const isHoliday = event.event_type === 'holiday'
   const myRsvp = rsvps.find((r) => r.user_id === userId)
   const canEdit = event.created_by === userId || isAdmin
 
@@ -140,20 +141,31 @@ export default function EventDetailClient({
         <h1 className="text-2xl font-semibold text-gray-900">{event.title}</h1>
 
         <div className="text-sm text-gray-600 space-y-1">
-          <p className="text-gray-700">{formatDatetime(event.starts_at)}</p>
-          {event.ends_at && (
-            <p className="text-gray-500">Ends {formatTime(event.ends_at)}</p>
+          {isHoliday ? (
+            <p className="text-gray-700">
+              {new Date(event.starts_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </p>
+          ) : (
+            <>
+              <p className="text-gray-700">{formatDatetime(event.starts_at)}</p>
+              {event.ends_at && <p className="text-gray-500">Ends {formatTime(event.ends_at)}</p>}
+              {event.location && <p className="text-gray-600">📍 {event.location}</p>}
+            </>
           )}
-          <p className="text-gray-600">📍 {event.location}</p>
+          {isHoliday && (
+            <span className="inline-block rounded-full bg-purple-100 text-purple-700 text-xs px-2 py-0.5">Holiday</span>
+          )}
         </div>
 
-        <p className="text-sm text-gray-700 pt-1 whitespace-pre-wrap">{event.description}</p>
+        {event.description && (
+          <p className="text-sm text-gray-700 pt-1 whitespace-pre-wrap">{event.description}</p>
+        )}
       </div>
 
-      <hr className="border-gray-100" />
+      {!isHoliday && <hr className="border-gray-100" />}
 
-      {/* RSVP section */}
-      <section className="space-y-3">
+      {/* RSVP section — hidden for holidays */}
+      {!isHoliday && <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-900">Will you attend?</h2>
 
         <div className="flex gap-2 flex-wrap">
@@ -208,11 +220,12 @@ export default function EventDetailClient({
 
         {rsvpSaved && <p className="text-xs text-green-600">RSVP saved.</p>}
         {rsvpError && <p className="text-xs text-red-600">{rsvpError}</p>}
-      </section>
+      </section>}
 
-      <hr className="border-gray-100" />
+      {!isHoliday && <hr className="border-gray-100" />}
 
-      {/* Attendee list */}
+      {/* Attendee list — hidden for holidays */}
+      {!isHoliday &&
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-900">
           Attending
@@ -244,7 +257,7 @@ export default function EventDetailClient({
             ))}
           </div>
         )}
-      </section>
+      </section>}
 
       {/* Edit / Delete / Blast — only for creator or admin */}
       {canEdit && (

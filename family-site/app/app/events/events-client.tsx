@@ -75,8 +75,8 @@ function groupByMonth(events: FamilyEvent[]) {
   return groups
 }
 
-// Color chip based on the user's RSVP for that event
-function chipClasses(status: RsvpStatus | undefined): string {
+function chipClasses(status: RsvpStatus | undefined, isHoliday: boolean): string {
+  if (isHoliday) return 'bg-purple-100 text-purple-700 hover:bg-purple-200 italic'
   switch (status) {
     case 'yes':   return 'bg-green-100 text-green-800 hover:bg-green-200'
     case 'maybe': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
@@ -113,7 +113,6 @@ export default function EventsClient({
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
   const calendarDays = buildCalendarGrid(year, month)
-  const monthLabel = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })
 
   function openCreate(date?: Date) {
     setInitialDate(date ? toYYYYMMDD(date) : undefined)
@@ -307,7 +306,7 @@ function MonthView({
                     key={e.id}
                     href={`/events/${e.id}`}
                     onClick={(ev) => ev.stopPropagation()}
-                    className={`block truncate text-xs rounded px-1 py-0.5 ${chipClasses(myRsvps[e.id])}`}
+                    className={`block truncate text-xs rounded px-1 py-0.5 ${chipClasses(myRsvps[e.id], e.event_type === 'holiday')}`}
                   >
                     {e.title}
                   </Link>
@@ -396,8 +395,8 @@ function ListView({
   )
 }
 
-// Left border color indicates RSVP status
-function listBorderClass(status: RsvpStatus | undefined): string {
+function listBorderClass(status: RsvpStatus | undefined, isHoliday: boolean): string {
+  if (isHoliday) return 'border-l-4 border-l-purple-400'
   switch (status) {
     case 'yes':   return 'border-l-4 border-l-green-400'
     case 'maybe': return 'border-l-4 border-l-yellow-400'
@@ -407,10 +406,11 @@ function listBorderClass(status: RsvpStatus | undefined): string {
 }
 
 function EventListItem({ event, rsvpStatus }: { event: FamilyEvent; rsvpStatus: RsvpStatus | undefined }) {
+  const isHoliday = event.event_type === 'holiday'
   return (
     <Link
       href={`/events/${event.id}`}
-      className={`flex items-start gap-4 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors ${listBorderClass(rsvpStatus)}`}
+      className={`flex items-start gap-4 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors ${listBorderClass(rsvpStatus, isHoliday)}`}
     >
       <div className="text-center min-w-10">
         <div className="text-xs text-gray-400 uppercase">

@@ -32,13 +32,16 @@ export interface ProfileAccessCode {
   joined_at: string
 }
 
+export type EventType = 'event' | 'holiday'
+
 export interface FamilyEvent {
   id: string
   title: string
-  description: string
-  location: string
+  description: string | null
+  location: string | null
   starts_at: string
   ends_at: string | null
+  event_type: EventType
   created_by: string
   access_code_id: string | null
   created_at: string

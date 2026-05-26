@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     ends_at?: string | null
     announcement?: string
     access_code_id?: string | null
+    event_type?: string
   }
 
   try {
@@ -42,10 +43,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   }
 
-  const { title, description, location, starts_at, ends_at, announcement, access_code_id } = body
-  if (!title || !description || !location || !starts_at || !announcement) {
+  const { title, description, location, starts_at, ends_at, announcement, access_code_id, event_type = 'event' } = body
+
+  if (!title || !starts_at || !announcement) {
     return NextResponse.json(
-      { error: 'Title, description, location, start time, and announcement message are required.' },
+      { error: 'Title, date, and blast message are required.' },
+      { status: 400 }
+    )
+  }
+  if (event_type === 'event' && (!description || !location)) {
+    return NextResponse.json(
+      { error: 'Description and location are required for events.' },
       { status: 400 }
     )
   }
@@ -54,10 +62,11 @@ export async function POST(request: Request) {
     .from('events')
     .insert({
       title: title.trim(),
-      description: description.trim(),
-      location: location.trim(),
+      description: description?.trim() ?? null,
+      location: location?.trim() ?? null,
       starts_at,
       ends_at: ends_at || null,
+      event_type,
       created_by: user.id,
       access_code_id: access_code_id ?? null,
     })
@@ -66,17 +75,35 @@ export async function POST(request: Request) {
 
   if (eventError) return NextResponse.json({ error: eventError.message }, { status: 500 })
 
-  await supabase.from('blasts').insert({
-    event_id: event.id,
-    created_by: user.id,
-    channel: 'email',
-    kind: 'announcement',
-    message: announcement.trim(),
-    send_at: new Date().toISOString(),
-  })
-
-  // Send the announcement blast immediately
-  await sendDueBlasts()
+  if (event_type === 'holiday') {
+    // Schedule blast for 9 AM EST (14:00 UTC) on the holiday date
+    const holidayDate = new Date(starts_at)
+    const blastAt = new Date(Date.UTC(
+      holidayDate.getUTCFullYear(),
+      holidayDate.getUTCMonth(),
+      holidayDate.getUTCDate(),
+      14, 0, 0
+    ))
+    await supabase.from('blasts').insert({
+      event_id: event.id,
+      created_by: user.id,
+      channel: 'email',
+      kind: 'reminder',
+      message: announcement.trim(),
+      send_at: blastAt.toISOString(),
+    })
+    // Do not send immediately — cron picks it up on the day
+  } else {
+    await supabase.from('blasts').insert({
+      event_id: event.id,
+      created_by: user.id,
+      channel: 'email',
+      kind: 'announcement',
+      message: announcement.trim(),
+      send_at: new Date().toISOString(),
+    })
+    await sendDueBlasts()
+  }
 
   return NextResponse.json({ event }, { status: 201 })
 }

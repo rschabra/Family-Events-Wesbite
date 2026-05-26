@@ -48,14 +48,20 @@ create table if not exists public.access_codes (
 create table if not exists public.events (
   id           uuid primary key default gen_random_uuid(),
   title        text not null,
-  description  text not null,
-  location     text not null,
+  description  text,                        -- optional for holidays
+  location     text,                        -- optional for holidays
   starts_at    timestamptz not null,
-  ends_at      timestamptz,                -- optional
+  ends_at      timestamptz,
+  event_type   text not null default 'event', -- 'event' | 'holiday'
   created_by   uuid not null references public.profiles(id) on delete cascade,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
+
+-- Migration: make location/description nullable and add event_type on existing DBs
+alter table public.events alter column location drop not null;
+alter table public.events alter column description drop not null;
+alter table public.events add column if not exists event_type text not null default 'event';
 
 create index if not exists events_starts_at_idx on public.events (starts_at);
 
