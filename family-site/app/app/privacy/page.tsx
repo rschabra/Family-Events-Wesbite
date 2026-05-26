@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       <main className="max-w-2xl mx-auto px-4 py-12 text-sm text-gray-700 space-y-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Privacy Policy</h1>
-          <p className="mt-2 text-gray-500">Last updated: May 2025</p>
+          <p className="mt-2 text-gray-500">Last updated: May 2026</p>
         </div>
 
         <section className="space-y-2">
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
             <li><strong>Message frequency:</strong> Varies based on how many events are created. Typically a few messages per month.</li>
             <li><strong>Message &amp; data rates may apply</strong> depending on your carrier plan.</li>
             <li>
-              <strong>To opt out:</strong> Reply <strong>STOP</strong> to any message, or uncheck
+              <strong>To opt out:</strong> Reply <strong>STOP </strong> to any message, or uncheck
               &ldquo;Text message&rdquo; in your profile settings.
             </li>
             <li><strong>For help:</strong> Reply HELP to any message or email us at {contactEmail}.</li>
