@@ -53,9 +53,30 @@ export async function GET(
     .select('*')
     .order('starts_at', { ascending: true })
 
-  const events = ((allEvents ?? []) as FamilyEvent[]).filter(
-    (e) => e.access_code_id === null || groupIds.includes(e.access_code_id)
-  )
+  // For null-scoped events, only show if viewer shares a group with the creator
+  const allEventsTyped = (allEvents ?? []) as FamilyEvent[]
+  const creatorIds = [...new Set(
+    allEventsTyped.filter(e => e.access_code_id === null).map(e => e.created_by)
+  )]
+  let creatorGroupMap: Record<string, string[]> = {}
+  if (creatorIds.length > 0) {
+    const { data: creatorGroupRows } = await admin
+      .from('profile_access_codes')
+      .select('profile_id, access_code_id')
+      .in('profile_id', creatorIds)
+    for (const row of creatorGroupRows ?? []) {
+      const r = row as { profile_id: string; access_code_id: string }
+      if (!creatorGroupMap[r.profile_id]) creatorGroupMap[r.profile_id] = []
+      creatorGroupMap[r.profile_id].push(r.access_code_id)
+    }
+  }
+
+  const events = allEventsTyped.filter((e) => {
+    if (e.access_code_id !== null) return groupIds.includes(e.access_code_id)
+    // null: visible if viewer shares any group with the creator
+    const creatorGroups = creatorGroupMap[e.created_by] ?? []
+    return creatorGroups.some((g) => groupIds.includes(g))
+  })
 
   const lines: string[] = [
     'BEGIN:VCALENDAR',

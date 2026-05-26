@@ -92,6 +92,7 @@ export default function EventsClient({
   myRsvps,
   groups,
   icalUrl,
+  creatorGroupMap,
 }: {
   events: FamilyEvent[]
   userId: string
@@ -99,6 +100,7 @@ export default function EventsClient({
   myRsvps: Record<string, RsvpStatus>
   groups: AccessCode[]
   icalUrl: string
+  creatorGroupMap: Record<string, string[]>
 }) {
   const router = useRouter()
   const today = new Date()
@@ -140,7 +142,12 @@ export default function EventsClient({
   }
 
   const visibleEvents = groupFilter
-    ? events.filter((e) => e.access_code_id === groupFilter || e.access_code_id === null)
+    ? events.filter((e) => {
+        if (e.access_code_id === groupFilter) return true
+        if (e.access_code_id !== null) return false
+        // null = "Everyone": only show if the creator is actually in the filtered group
+        return (creatorGroupMap[e.created_by] ?? []).includes(groupFilter)
+      })
     : events
 
   return (

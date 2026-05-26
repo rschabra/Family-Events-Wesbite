@@ -4,7 +4,8 @@
       "Bash(npm install *)",
       "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('hex'\\)\\)\")",
       "Bash(npx tsc *)",
-      "Bash(mkdir -p \"c:\\\\Users\\\\Rohan Chabra\\\\Family-Events-Wesbite\\\\family-site\\\\app\\\\app\\\\api\\\\ical\\\\[userId]\")"
+      "Bash(mkdir -p \"c:\\\\Users\\\\Rohan Chabra\\\\Family-Events-Wesbite\\\\family-site\\\\app\\\\app\\\\api\\\\ical\\\\[userId]\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\Rohan Chabra\\\\Family-Events-Wesbite\\\\family-site\\\\app\\\\app\\\\api\\\\admin\\\\import\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Rohan Chabra\\Family-Events-Wesbite\\family-site\\app\\app\\api\\ical"

@@ -13,6 +13,7 @@ type BlastRow = {
     starts_at: string
     location: string
     access_code_id: string | null
+    created_by: string
   }
 }
 
@@ -25,7 +26,7 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
 
   const { data: blasts, error: blastError } = await admin
     .from('blasts')
-    .select('id, message, kind, events(id, title, starts_at, location, access_code_id)')
+    .select('id, message, kind, events(id, title, starts_at, location, access_code_id, created_by)')
     .eq('status', 'scheduled')
     .lte('send_at', new Date().toISOString())
 
@@ -49,6 +50,7 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
       .not('email', 'is', null)
 
     if (event.access_code_id) {
+      // Scoped to a specific group
       const { data: members } = await admin
         .from('profile_access_codes')
         .select('profile_id')
@@ -56,7 +58,32 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
 
       const ids = (members ?? []).map((m: { profile_id: string }) => m.profile_id)
       if (!ids.length) {
-        // No members in group — mark sent and skip
+        await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
+        sent++
+        continue
+      }
+      profilesQuery = profilesQuery.in('id', ids)
+    } else {
+      // "Everyone" — send to all members of the creator's groups (deduplicated)
+      const { data: creatorGroups } = await admin
+        .from('profile_access_codes')
+        .select('access_code_id')
+        .eq('profile_id', event.created_by)
+
+      const creatorGroupIds = (creatorGroups ?? []).map((g: { access_code_id: string }) => g.access_code_id)
+      if (!creatorGroupIds.length) {
+        await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
+        sent++
+        continue
+      }
+
+      const { data: members } = await admin
+        .from('profile_access_codes')
+        .select('profile_id')
+        .in('access_code_id', creatorGroupIds)
+
+      const ids = [...new Set((members ?? []).map((m: { profile_id: string }) => m.profile_id))]
+      if (!ids.length) {
         await admin.from('blasts').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', blast.id)
         sent++
         continue

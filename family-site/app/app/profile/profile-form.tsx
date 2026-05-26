@@ -8,10 +8,12 @@ export default function ProfileForm({
   profile,
   email,
   initialGroups,
+  isAdmin,
 }: {
   profile: Profile
   email: string
   initialGroups: AccessCode[]
+  isAdmin: boolean
 }) {
   const [fullName, setFullName] = useState(profile.full_name ?? '')
   const [phone, setPhone] = useState(profile.phone ?? '')
@@ -27,6 +29,33 @@ export default function ProfileForm({
   const [createStatus, setCreateStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [createError, setCreateError] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importGroupId, setImportGroupId] = useState<string>('')
+  const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [importResult, setImportResult] = useState<{ imported: number; skipped: number; total: number } | null>(null)
+  const [importError, setImportError] = useState('')
+
+  async function handleImport(e: React.FormEvent) {
+    e.preventDefault()
+    if (!importFile) return
+    setImportStatus('loading')
+    setImportResult(null)
+    setImportError('')
+    const form = new FormData()
+    form.append('file', importFile)
+    if (importGroupId) form.append('access_code_id', importGroupId)
+    const res = await fetch('/api/admin/import', { method: 'POST', body: form })
+    const json = await res.json()
+    if (!res.ok) {
+      setImportError(json.error ?? 'Import failed.')
+      setImportStatus('error')
+    } else {
+      setImportResult(json)
+      setImportStatus('done')
+      setImportFile(null)
+    }
+  }
 
   async function save() {
     setStatus('saving')
@@ -221,6 +250,53 @@ export default function ProfileForm({
         )}
       </div>
 
+      {isAdmin && (
+        <>
+          <hr className="border-gray-100" />
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-900">Import from Google Calendar</h2>
+            <p className="text-xs text-gray-500">
+              In Google Calendar: Settings → Import &amp; Export → Export. Unzip the download and upload the <span className="font-mono">.ics</span> file here. Duplicate events are skipped automatically.
+            </p>
+            <form onSubmit={handleImport} className="space-y-3">
+              <input
+                type="file"
+                accept=".ics"
+                onChange={(e) => { setImportFile(e.target.files?.[0] ?? null); setImportStatus('idle'); setImportResult(null); setImportError('') }}
+                className="block text-sm text-gray-600 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:text-gray-700 file:hover:bg-gray-50"
+              />
+              <label className="block">
+                <span className="text-sm text-gray-700">Import to group</span>
+                <select
+                  value={importGroupId}
+                  onChange={(e) => setImportGroupId(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+                >
+                  <option value="">Everyone (all your groups)</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="submit"
+                disabled={!importFile || importStatus === 'loading'}
+                className="rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+              >
+                {importStatus === 'loading' ? 'Importing…' : 'Import events'}
+              </button>
+              {importStatus === 'done' && importResult && (
+                <p className="text-sm text-green-600">
+                  Imported {importResult.imported} event{importResult.imported !== 1 ? 's' : ''}{importResult.skipped > 0 ? ` · ${importResult.skipped} skipped (already exist)` : ''}.
+                </p>
+              )}
+              {importStatus === 'error' && (
+                <p className="text-sm text-red-600">{importError}</p>
+              )}
+            </form>
+          </div>
+        </>
+      )}
     </div>
   )
 }

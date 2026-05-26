@@ -34,7 +34,7 @@ export default async function ProfilePage() {
   return (
     <main className="flex-1 p-4 sm:p-6 max-w-md mx-auto w-full space-y-6">
       <h1 className="text-xl font-semibold text-gray-900">Your profile</h1>
-      <ProfileForm profile={profile} email={user.email ?? ''} initialGroups={groups} />
+      <ProfileForm profile={profile} email={user.email ?? ''} initialGroups={groups} isAdmin={profile.is_admin} />
     </main>
   )
 }
