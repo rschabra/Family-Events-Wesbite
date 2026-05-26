@@ -68,7 +68,7 @@ export async function POST(request: Request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const supabase = await createClient()
 
-  const { error: signUpError } = await supabase.auth.signUp({
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email: email.trim().toLowerCase(),
     password,
     options: {
@@ -101,11 +101,11 @@ export async function POST(request: Request) {
   }
 
   // Link the new user to the group they signed up with.
-  // The DB trigger already created the profile row synchronously, so it's safe to insert here.
-  const { data: newUser } = await supabase.auth.getUser()
-  if (newUser.user) {
+  // Use signUpData.user directly — getUser() returns null here because the
+  // new user has no session yet (email not yet confirmed).
+  if (signUpData?.user) {
     await admin.from('profile_access_codes').upsert({
-      profile_id: newUser.user.id,
+      profile_id: signUpData.user.id,
       access_code_id: codeRow.id,
     }, { onConflict: 'profile_id,access_code_id', ignoreDuplicates: true })
   }

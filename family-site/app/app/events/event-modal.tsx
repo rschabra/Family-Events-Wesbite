@@ -62,12 +62,12 @@ export default function EventModal({
         setStartsAt(`${initialDate}T12:00`)
         setEndsAt(`${initialDate}T23:59`)
         setHolidayDate(initialDate)
-        setAccessCodeId(groups?.[0]?.id ?? '')
+        setAccessCodeId('')
       } else {
         setStartsAt('')
         setEndsAt('')
         setHolidayDate('')
-        setAccessCodeId(groups?.[0]?.id ?? '')
+        setAccessCodeId('')
       }
       setAnnouncement('')
       setStatus('idle')
