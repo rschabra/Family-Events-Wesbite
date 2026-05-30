@@ -347,7 +347,7 @@ function MonthView({
               }`}
             >
               <div
-                className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${
+                className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full mb-1 ${
                   isToday
                     ? 'bg-indigo-600 text-white'
                     : isCurrentMonth
