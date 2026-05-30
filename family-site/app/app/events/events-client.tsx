@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { AccessCode, FamilyEvent, RsvpStatus } from '@/lib/types'
@@ -257,24 +257,16 @@ export default function EventsClient({
             >
               ‹
             </button>
-            <select
+            <CalendarSelect
               value={month}
-              onChange={(e) => setCurrentDate(new Date(year, Number(e.target.value), 1))}
-              className="rounded-lg px-1 py-1 text-sm font-semibold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
-                <option key={m} value={i}>{m}</option>
-              ))}
-            </select>
-            <select
+              onChange={(m) => setCurrentDate(new Date(year, m, 1))}
+              options={['January','February','March','April','May','June','July','August','September','October','November','December'].map((label, i) => ({ label, value: i }))}
+            />
+            <CalendarSelect
               value={year}
-              onChange={(e) => setCurrentDate(new Date(Number(e.target.value), month, 1))}
-              className="rounded-lg px-1 py-1 text-sm font-semibold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              {Array.from({ length: 8 }, (_, i) => today.getFullYear() - 1 + i).map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+              onChange={(y) => setCurrentDate(new Date(y, month, 1))}
+              options={Array.from({ length: 8 }, (_, i) => today.getFullYear() - 1 + i).map((y) => ({ label: String(y), value: y }))}
+            />
             <button
               onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
               className="px-2 py-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors font-medium"
@@ -502,5 +494,59 @@ function EventListItem({ event, rsvpStatus }: { event: FamilyEvent; rsvpStatus: 
         </div>
       )}
     </Link>
+  )
+}
+
+function CalendarSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: number
+  onChange: (v: number) => void
+  options: { label: string; value: number }[]
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onPointerDown(e: PointerEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [])
+
+  const selected = options.find((o) => o.value === value)
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-semibold text-gray-900 hover:bg-gray-100 transition-colors"
+      >
+        {selected?.label}
+        <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute top-full mt-1 left-0 z-30 min-w-max rounded-xl border border-gray-100 bg-white py-1 shadow-lg">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { onChange(o.value); setOpen(false) }}
+              className={`block w-full text-left px-4 py-1.5 text-sm transition-colors hover:bg-gray-50 ${
+                o.value === value ? 'font-semibold text-indigo-600' : 'text-gray-700'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
