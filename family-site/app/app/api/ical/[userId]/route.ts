@@ -12,13 +12,14 @@ export function icalToken(userId: string): string {
 }
 
 function toIcsDatetime(iso: string): string {
-  // "2026-05-28T12:00:00.000Z" → "20260528T120000Z"
-  return iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  // Supabase returns "+00:00" or 6-decimal microseconds; normalise via Date
+  // so we always get the canonical "20260528T120000Z" ICS UTC format.
+  return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 }
 
 function toIcsDate(iso: string): string {
-  // "2026-05-28T12:00:00.000Z" → "20260528"
-  return iso.slice(0, 10).replace(/-/g, '')
+  // Normalise through Date to avoid any timezone offset in the raw string.
+  return new Date(iso).toISOString().slice(0, 10).replace(/-/g, '')
 }
 
 function toIcsDateNextDay(iso: string): string {
