@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
-  const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p))
+  const isPublic = path === '/' || PUBLIC_PATHS.some((p) => path.startsWith(p))
 
   // Not logged in + trying to reach a protected page -> send to /login
   if (!user && !isPublic) {

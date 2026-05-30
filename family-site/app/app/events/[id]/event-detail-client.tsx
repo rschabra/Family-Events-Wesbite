@@ -135,159 +135,191 @@ export default function EventDetailClient({
   const totalAttending = goingRsvps.reduce((sum, r) => sum + r.party_size, 0)
 
   return (
-    <div className="space-y-6">
-      {/* Event info */}
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold text-gray-900">{event.title}</h1>
+    <div className="space-y-5">
+      {/* Event header card */}
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 space-y-3">
+        {isHoliday && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold px-2.5 py-1">
+            Holiday / Birthday
+          </span>
+        )}
+        <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
 
-        <div className="text-sm text-gray-600 space-y-1">
+        <div className="space-y-1.5 text-sm text-gray-600">
           {isHoliday ? (
-            <p className="text-gray-700">
-              {new Date(event.starts_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            <p className="font-medium text-gray-700">
+              {new Date(event.starts_at).toLocaleDateString('en-US', {
+                weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+              })}
             </p>
           ) : (
             <>
-              <p className="text-gray-700">{formatDatetime(event.starts_at)}</p>
-              {event.ends_at && <p className="text-gray-500">Ends {formatTime(event.ends_at)}</p>}
-              {event.location && <p className="text-gray-600">📍 {event.location}</p>}
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="font-medium text-gray-800">{formatDatetime(event.starts_at)}</span>
+              </div>
+              {event.ends_at && (
+                <div className="flex items-center gap-2 pl-6 text-gray-500">
+                  <span>Ends {formatTime(event.ends_at)}</span>
+                </div>
+              )}
+              {event.location && (
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-gray-600">{event.location}</span>
+                </div>
+              )}
             </>
-          )}
-          {isHoliday && (
-            <span className="inline-block rounded-full bg-purple-100 text-purple-700 text-xs px-2 py-0.5">Holiday</span>
           )}
         </div>
 
         {event.description && (
-          <p className="text-sm text-gray-700 pt-1 whitespace-pre-wrap">{event.description}</p>
+          <p className="text-sm text-gray-700 pt-1 whitespace-pre-wrap leading-relaxed border-t border-gray-50 mt-3">
+            {event.description}
+          </p>
         )}
       </div>
 
-      {!isHoliday && <hr className="border-gray-100" />}
+      {/* RSVP section */}
+      {!isHoliday && (
+        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 space-y-4">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Will you attend?</h2>
 
-      {/* RSVP section — hidden for holidays */}
-      {!isHoliday && <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-gray-900">Will you attend?</h2>
-
-        <div className="flex gap-2 flex-wrap">
-          {(['yes', 'maybe', 'no'] as RsvpStatus[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => handleStatusClick(s)}
-              disabled={rsvpSaving}
-              className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
-                rsvpStatus === s
-                  ? s === 'yes'
-                    ? 'bg-green-600 border-green-600 text-white'
-                    : s === 'maybe'
-                    ? 'bg-yellow-500 border-yellow-500 text-white'
-                    : 'bg-gray-600 border-gray-600 text-white'
-                  : 'border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {s === 'yes' ? 'Going' : s === 'maybe' ? 'Maybe' : 'Not going'}
-            </button>
-          ))}
-        </div>
-
-        {rsvpStatus === 'yes' && (
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-700">Party size</label>
-            <div className="flex items-center gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {([
+              { status: 'yes' as RsvpStatus, label: 'Going', icon: '✓' },
+              { status: 'maybe' as RsvpStatus, label: 'Maybe', icon: '?' },
+              { status: 'no' as RsvpStatus, label: 'Not going', icon: '✕' },
+            ]).map(({ status, label, icon }) => (
               <button
-                onClick={() => {
-                  const next = Math.max(1, partySize - 1)
-                  setPartySize(next)
-                  saveRsvp('yes', next)
-                }}
-                className="w-7 h-7 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-lg leading-none flex items-center justify-center"
+                key={status}
+                onClick={() => handleStatusClick(status)}
+                disabled={rsvpSaving}
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 ${
+                  rsvpStatus === status
+                    ? status === 'yes'
+                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                      : status === 'maybe'
+                      ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
+                      : 'bg-gray-600 border-gray-600 text-white shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300'
+                }`}
               >
-                −
+                <span className="text-xs">{icon}</span>
+                {label}
               </button>
-              <span className="w-6 text-center text-sm font-medium">{partySize}</span>
-              <button
-                onClick={() => {
-                  const next = partySize + 1
-                  setPartySize(next)
-                  saveRsvp('yes', next)
-                }}
-                className="w-7 h-7 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 text-lg leading-none flex items-center justify-center"
-              >
-                +
-              </button>
+            ))}
+          </div>
+
+          {rsvpStatus === 'yes' && (
+            <div className="flex items-center gap-3 pt-1">
+              <span className="text-sm text-gray-600 font-medium">Party size</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const next = Math.max(1, partySize - 1)
+                    setPartySize(next)
+                    saveRsvp('yes', next)
+                  }}
+                  className="w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 text-lg leading-none flex items-center justify-center transition-colors font-medium"
+                >
+                  −
+                </button>
+                <span className="w-8 text-center text-sm font-bold text-gray-900">{partySize}</span>
+                <button
+                  onClick={() => {
+                    const next = partySize + 1
+                    setPartySize(next)
+                    saveRsvp('yes', next)
+                  }}
+                  className="w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 text-lg leading-none flex items-center justify-center transition-colors font-medium"
+                >
+                  +
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-
-        {rsvpSaved && <p className="text-xs text-green-600">RSVP saved.</p>}
-        {rsvpError && <p className="text-xs text-red-600">{rsvpError}</p>}
-      </section>}
-
-      {!isHoliday && <hr className="border-gray-100" />}
-
-      {/* Attendee list — hidden for holidays */}
-      {!isHoliday &&
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-gray-900">
-          Attending
-          {totalAttending > 0 && (
-            <span className="ml-2 font-normal text-gray-400">
-              {totalAttending} {totalAttending === 1 ? 'person' : 'people'}
-            </span>
           )}
-        </h2>
 
-        {goingRsvps.length === 0 && maybeRsvps.length === 0 ? (
-          <p className="text-sm text-gray-400">No RSVPs yet.</p>
-        ) : (
-          <div className="space-y-1">
-            {goingRsvps.map((r) => (
-              <div key={r.id} className="flex items-center gap-2 text-sm">
-                <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                <span className="text-gray-700">{r.profiles.full_name ?? 'Family member'}</span>
-                {r.party_size > 1 && (
-                  <span className="text-gray-400">+{r.party_size - 1}</span>
-                )}
-              </div>
-            ))}
-            {maybeRsvps.map((r) => (
-              <div key={r.id} className="flex items-center gap-2 text-sm">
-                <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
-                <span className="text-gray-500">{r.profiles.full_name ?? 'Family member'} (maybe)</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>}
+          {rsvpSaved && <p className="text-xs text-emerald-600 font-medium">RSVP saved.</p>}
+          {rsvpError && <p className="text-xs text-red-600">{rsvpError}</p>}
+        </div>
+      )}
 
-      {/* Edit / Delete / Blast — only for creator or admin */}
+      {/* Attendee list */}
+      {!isHoliday && (
+        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 space-y-3">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide flex items-center gap-2">
+            Attending
+            {totalAttending > 0 && (
+              <span className="rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5">
+                {totalAttending} {totalAttending === 1 ? 'person' : 'people'}
+              </span>
+            )}
+          </h2>
+
+          {goingRsvps.length === 0 && maybeRsvps.length === 0 ? (
+            <p className="text-sm text-gray-400">No RSVPs yet. Be the first!</p>
+          ) : (
+            <div className="space-y-2">
+              {goingRsvps.map((r) => (
+                <div key={r.id} className="flex items-center gap-2.5 text-sm">
+                  <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs shrink-0">
+                    {(r.profiles.full_name ?? 'F')[0].toUpperCase()}
+                  </div>
+                  <span className="text-gray-800 font-medium">{r.profiles.full_name ?? 'Family member'}</span>
+                  {r.party_size > 1 && (
+                    <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">+{r.party_size - 1} guest{r.party_size > 2 ? 's' : ''}</span>
+                  )}
+                </div>
+              ))}
+              {maybeRsvps.map((r) => (
+                <div key={r.id} className="flex items-center gap-2.5 text-sm">
+                  <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs shrink-0">
+                    {(r.profiles.full_name ?? 'F')[0].toUpperCase()}
+                  </div>
+                  <span className="text-gray-500">{r.profiles.full_name ?? 'Family member'}</span>
+                  <span className="text-xs text-amber-600 bg-amber-50 rounded-full px-2 py-0.5 font-medium">maybe</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Edit / Delete / Blast */}
       {canEdit && (
-        <>
-          <hr className="border-gray-100" />
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 space-y-4">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Manage event</h2>
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setEditOpen(true)}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
             >
               Edit event
             </button>
             <button
               onClick={deleteEvent}
               disabled={deleting}
-              className="rounded-md border border-red-200 text-red-600 px-4 py-2 text-sm hover:bg-red-50 disabled:opacity-50"
+              className="rounded-xl border border-red-100 bg-white text-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-50 hover:border-red-200 transition-all disabled:opacity-50"
             >
-              {deleting ? 'Deleting…' : 'Delete event'}
+              {deleting ? 'Deleting…' : 'Delete'}
             </button>
             <button
               onClick={() => { setBlastOpen((o) => !o); setBlastResult(null) }}
-              className="rounded-md border border-blue-200 text-blue-700 px-4 py-2 text-sm hover:bg-blue-50"
+              className="rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-700 px-4 py-2 text-sm font-semibold hover:bg-indigo-100 transition-all"
             >
               {blastOpen ? 'Cancel blast' : 'Send a blast'}
             </button>
-            {deleteError && <p className="text-xs text-red-600">{deleteError}</p>}
+            {deleteError && <p className="text-xs text-red-600 w-full">{deleteError}</p>}
           </div>
 
           {blastOpen && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-3">
               <h3 className="text-sm font-semibold text-gray-900">Send email blast</h3>
 
               <div className="flex gap-2">
@@ -295,10 +327,10 @@ export default function EventDetailClient({
                   <button
                     key={k}
                     onClick={() => setBlastKind(k)}
-                    className={`rounded-md border px-3 py-1 text-xs font-medium transition-colors ${
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                       blastKind === k
-                        ? 'bg-gray-900 border-gray-900 text-white'
-                        : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                        ? 'bg-indigo-600 border-indigo-600 text-white'
+                        : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     {k === 'reminder' ? 'Reminder' : 'Update'}
@@ -309,17 +341,17 @@ export default function EventDetailClient({
               <textarea
                 value={blastMessage}
                 onChange={(e) => setBlastMessage(e.target.value)}
-                placeholder={blastKind === 'reminder' ? 'e.g. Don\'t forget — see you Saturday!' : 'e.g. Venue changed to the park.'}
+                placeholder={blastKind === 'reminder' ? "e.g. Don't forget — see you Saturday!" : 'e.g. Venue changed to the park.'}
                 rows={3}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none resize-none"
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none resize-none transition-all"
               />
 
-              <label className="flex items-center gap-2 text-sm text-gray-700">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={blastScheduled}
                   onChange={(e) => setBlastScheduled(e.target.checked)}
-                  className="rounded"
+                  className="rounded accent-indigo-600"
                 />
                 Schedule for later
               </label>
@@ -329,68 +361,65 @@ export default function EventDetailClient({
                   type="datetime-local"
                   value={blastSendAt}
                   onChange={(e) => setBlastSendAt(e.target.value)}
-                  className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+                  className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none transition-all"
                 />
               )}
 
               <button
                 onClick={sendBlast}
                 disabled={blastSending || !blastMessage.trim()}
-                className="rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+                className="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-sm"
               >
                 {blastSending ? 'Sending…' : blastScheduled ? 'Schedule blast' : 'Send now'}
               </button>
 
               {blastResult === 'sent' && (
-                <p className="text-xs text-green-600">Blast sent to all family members.</p>
+                <p className="text-xs text-emerald-600 font-medium">Blast sent to all family members.</p>
               )}
               {blastResult === 'scheduled' && (
-                <p className="text-xs text-green-600">Blast scheduled successfully.</p>
+                <p className="text-xs text-emerald-600 font-medium">Blast scheduled successfully.</p>
               )}
               {blastResult === 'error' && (
                 <p className="text-xs text-red-600">{blastError || 'Could not send blast.'}</p>
               )}
             </div>
           )}
-        </>
-      )}
 
-      {/* Blast history — visible to creator/admin */}
-      {canEdit && blasts.length > 0 && (
-        <>
-          <hr className="border-gray-100" />
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold text-gray-900">Blasts sent</h2>
-            <div className="space-y-2">
-              {blasts.map((b) => (
-                <div
-                  key={b.id}
-                  className="rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-xs space-y-1"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 font-medium ${
-                      b.status === 'sent'
-                        ? 'bg-green-100 text-green-700'
-                        : b.status === 'failed'
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {b.status}
-                    </span>
-                    <span className="text-gray-500 capitalize">{b.kind}</span>
-                    <span className="text-gray-400 ml-auto">
-                      {new Date(b.send_at).toLocaleString('en-US', {
-                        month: 'short', day: 'numeric',
-                        hour: 'numeric', minute: '2-digit', hour12: true,
-                      })}
-                    </span>
+          {/* Blast history */}
+          {blasts.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-gray-100">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-gray-400">Blast history</h3>
+              <div className="space-y-2">
+                {blasts.map((b) => (
+                  <div
+                    key={b.id}
+                    className="rounded-xl border border-gray-100 bg-white px-3 py-2.5 text-xs space-y-1"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 font-semibold ${
+                        b.status === 'sent'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : b.status === 'failed'
+                          ? 'bg-red-100 text-red-600'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {b.status}
+                      </span>
+                      <span className="text-gray-500 capitalize font-medium">{b.kind}</span>
+                      <span className="text-gray-400 ml-auto">
+                        {new Date(b.send_at).toLocaleString('en-US', {
+                          month: 'short', day: 'numeric',
+                          hour: 'numeric', minute: '2-digit', hour12: true,
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 line-clamp-2">{b.message}</p>
                   </div>
-                  <p className="text-gray-600 line-clamp-2">{b.message}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </section>
-        </>
+          )}
+        </div>
       )}
 
       <EventModal

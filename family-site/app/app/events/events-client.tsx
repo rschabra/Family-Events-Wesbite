@@ -78,10 +78,10 @@ function groupByMonth(events: FamilyEvent[]) {
 function chipClasses(status: RsvpStatus | undefined, isHoliday: boolean): string {
   if (isHoliday) return 'bg-purple-100 text-purple-700 hover:bg-purple-200 italic'
   switch (status) {
-    case 'yes':   return 'bg-green-100 text-green-800 hover:bg-green-200'
-    case 'maybe': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+    case 'yes':   return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+    case 'maybe': return 'bg-amber-100 text-amber-800 hover:bg-amber-200'
     case 'no':    return 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-    default:      return 'bg-blue-50 text-blue-800 hover:bg-blue-100'
+    default:      return 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
   }
 }
 
@@ -123,7 +123,6 @@ export default function EventsClient({
   )
   const [modalOpen, setModalOpen] = useState(false)
   const [initialDate, setInitialDate] = useState<string | undefined>(undefined)
-  // null = all groups
   const [groupFilter, setGroupFilter] = useState<string | null>(null)
 
   const year = currentDate.getFullYear()
@@ -145,7 +144,6 @@ export default function EventsClient({
     ? events.filter((e) => {
         if (e.access_code_id === groupFilter) return true
         if (e.access_code_id !== null) return false
-        // null = "Everyone": only show if the creator is actually in the filtered group
         return (creatorGroupMap[e.created_by] ?? []).includes(groupFilter)
       })
     : events
@@ -154,12 +152,13 @@ export default function EventsClient({
     <div className="flex-1 p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-4">
       {/* Header */}
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Calendar</h1>
+        <h1 className="text-xl font-bold text-gray-900">Calendar</h1>
         <div className="relative flex items-center gap-2">
+          {/* iCal sync button */}
           <button
             onClick={() => setSyncOpen((o) => !o)}
             title="Sync to calendar"
-            className="rounded-md border border-gray-300 p-2 text-gray-600 hover:bg-gray-100"
+            className="rounded-lg border border-gray-200 bg-white p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors shadow-xs"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -168,32 +167,32 @@ export default function EventsClient({
           </button>
           <button
             onClick={() => openCreate()}
-            className="rounded-md bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-gray-800"
+            className="rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
           >
             + New event
           </button>
           {syncOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setSyncOpen(false)} />
-              <div className="absolute right-0 top-full mt-2 w-[min(18rem,calc(100vw-2rem))] z-20 rounded-lg border border-gray-200 bg-white shadow-lg p-4 space-y-3">
-                <p className="text-sm font-medium text-gray-900">Sync to your calendar</p>
+              <div className="absolute right-0 top-full mt-2 w-[min(18rem,calc(100vw-2rem))] z-20 rounded-xl border border-gray-100 bg-white shadow-lg p-4 space-y-3">
+                <p className="text-sm font-semibold text-gray-900">Sync to your calendar</p>
                 <p className="text-xs text-gray-500">Subscribe in Apple Calendar, Google Calendar, or any ICS-compatible app.</p>
                 <div className="flex gap-2">
                   <input
                     readOnly
                     value={icalUrl}
-                    className="flex-1 min-w-0 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-mono text-gray-600 truncate"
+                    className="flex-1 min-w-0 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-mono text-gray-600 truncate"
                   />
                   <button
                     onClick={copyIcalUrl}
-                    className="shrink-0 rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100"
+                    className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
                 <a
                   href={icalUrl.replace(/^https?:/, 'webcal:')}
-                  className="block text-sm text-blue-600 hover:underline"
+                  className="block text-sm text-indigo-600 hover:underline font-medium"
                   onClick={() => setSyncOpen(false)}
                 >
                   Open in Apple Calendar →
@@ -209,10 +208,10 @@ export default function EventsClient({
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setGroupFilter(null)}
-            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+            className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
               groupFilter === null
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'border-gray-200 text-gray-600 bg-white hover:bg-gray-50'
             }`}
           >
             All groups
@@ -221,10 +220,10 @@ export default function EventsClient({
             <button
               key={g.id}
               onClick={() => setGroupFilter(g.id)}
-              className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+              className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
                 groupFilter === g.id
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'border-gray-200 text-gray-600 bg-white hover:bg-gray-50'
               }`}
             >
               {g.name}
@@ -235,16 +234,16 @@ export default function EventsClient({
 
       {/* View toggle + month nav */}
       <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex rounded-md border border-gray-200 overflow-hidden text-sm">
+        <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden text-sm shadow-xs">
           <button
             onClick={() => setView('month')}
-            className={`px-3 py-1.5 ${view === 'month' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+            className={`px-3 py-1.5 font-medium transition-colors ${view === 'month' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             Month
           </button>
           <button
             onClick={() => setView('list')}
-            className={`px-3 py-1.5 border-l border-gray-200 ${view === 'list' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+            className={`px-3 py-1.5 border-l border-gray-200 font-medium transition-colors ${view === 'list' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             List
           </button>
@@ -254,14 +253,14 @@ export default function EventsClient({
           <div className="flex items-center gap-1 text-sm">
             <button
               onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
-              className="px-2 py-1 rounded text-gray-600 hover:bg-gray-100"
+              className="px-2 py-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors font-medium"
             >
               ‹
             </button>
             <select
               value={month}
               onChange={(e) => setCurrentDate(new Date(year, Number(e.target.value), 1))}
-              className="rounded px-1 py-1 text-sm font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-gray-300 cursor-pointer"
+              className="rounded-lg px-1 py-1 text-sm font-semibold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
             >
               {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
                 <option key={m} value={i}>{m}</option>
@@ -270,7 +269,7 @@ export default function EventsClient({
             <select
               value={year}
               onChange={(e) => setCurrentDate(new Date(Number(e.target.value), month, 1))}
-              className="rounded px-1 py-1 text-sm font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-gray-300 cursor-pointer"
+              className="rounded-lg px-1 py-1 text-sm font-semibold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
             >
               {Array.from({ length: 8 }, (_, i) => today.getFullYear() - 1 + i).map((y) => (
                 <option key={y} value={y}>{y}</option>
@@ -278,7 +277,7 @@ export default function EventsClient({
             </select>
             <button
               onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
-              className="px-2 py-1 rounded text-gray-600 hover:bg-gray-100"
+              className="px-2 py-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors font-medium"
             >
               ›
             </button>
@@ -327,11 +326,11 @@ function MonthView({
   onDayClick: (date: Date) => void
 }) {
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white">
       {/* Day headers */}
-      <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+      <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
         {DAYS_OF_WEEK.map((d) => (
-          <div key={d} className="py-2 text-center text-xs font-medium text-gray-500">
+          <div key={d} className="py-2.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">
             {d}
           </div>
         ))}
@@ -349,14 +348,18 @@ function MonthView({
             <div
               key={i}
               onClick={() => onDayClick(day)}
-              className={`min-h-14 sm:min-h-28 p-1 cursor-pointer ${isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'}`}
+              className={`min-h-14 sm:min-h-28 p-1.5 cursor-pointer transition-colors ${
+                isCurrentMonth
+                  ? isToday ? 'bg-indigo-50/40' : 'bg-white hover:bg-gray-50'
+                  : 'bg-gray-50/60 hover:bg-gray-100/60'
+              }`}
             >
               <div
-                className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${
+                className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${
                   isToday
-                    ? 'bg-gray-900 text-white'
+                    ? 'bg-indigo-600 text-white'
                     : isCurrentMonth
-                    ? 'text-gray-900'
+                    ? 'text-gray-800'
                     : 'text-gray-300'
                 }`}
               >
@@ -368,7 +371,7 @@ function MonthView({
                     key={e.id}
                     href={`/events/${e.id}`}
                     onClick={(ev) => ev.stopPropagation()}
-                    className={`block truncate text-xs rounded px-1 py-0.5 ${chipClasses(myRsvps[e.id], e.event_type === 'holiday')}`}
+                    className={`block truncate text-xs rounded-md px-1.5 py-0.5 font-medium transition-colors ${chipClasses(myRsvps[e.id], e.event_type === 'holiday')}`}
                   >
                     {e.title}
                   </Link>
@@ -377,7 +380,7 @@ function MonthView({
                   <Link
                     href={`/events/${dayEvents[3].id}`}
                     onClick={(ev) => ev.stopPropagation()}
-                    className="block text-xs text-gray-400 hover:text-gray-700 px-1"
+                    className="block text-xs text-gray-400 hover:text-indigo-600 px-1.5 transition-colors"
                   >
                     +{dayEvents.length - 3} more
                   </Link>
@@ -421,7 +424,7 @@ function ListView({
       )}
       {groups.map((g) => (
         <section key={g.label}>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 px-1">
             {g.label}
           </h2>
           <div className="space-y-2">
@@ -434,13 +437,13 @@ function ListView({
 
       {pastGroups.length > 0 && (
         <details className="group">
-          <summary className="text-xs font-semibold uppercase tracking-wide text-gray-300 cursor-pointer hover:text-gray-400 select-none">
+          <summary className="text-xs font-bold uppercase tracking-widest text-gray-300 cursor-pointer hover:text-gray-400 select-none transition-colors">
             Past events ({past.length})
           </summary>
           <div className="mt-4 space-y-6">
             {pastGroups.map((g) => (
               <section key={g.label}>
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-300 mb-2">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-gray-300 mb-3 px-1">
                   {g.label}
                 </h2>
                 <div className="space-y-2">
@@ -460,10 +463,10 @@ function ListView({
 function listBorderClass(status: RsvpStatus | undefined, isHoliday: boolean): string {
   if (isHoliday) return 'border-l-4 border-l-purple-400'
   switch (status) {
-    case 'yes':   return 'border-l-4 border-l-green-400'
-    case 'maybe': return 'border-l-4 border-l-yellow-400'
+    case 'yes':   return 'border-l-4 border-l-emerald-400'
+    case 'maybe': return 'border-l-4 border-l-amber-400'
     case 'no':    return 'border-l-4 border-l-gray-300'
-    default:      return 'border-l-4 border-l-blue-200'
+    default:      return 'border-l-4 border-l-indigo-300'
   }
 }
 
@@ -472,23 +475,32 @@ function EventListItem({ event, rsvpStatus }: { event: FamilyEvent; rsvpStatus: 
   return (
     <Link
       href={`/events/${event.id}`}
-      className={`flex items-start gap-4 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors ${listBorderClass(rsvpStatus, isHoliday)}`}
+      className={`flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 hover:border-gray-200 hover:shadow-sm transition-all ${listBorderClass(rsvpStatus, isHoliday)}`}
     >
-      <div className="text-center min-w-10">
-        <div className="text-xs text-gray-400 uppercase">
+      <div className="text-center min-w-10 pt-0.5">
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
           {new Date(event.starts_at).toLocaleString('default', { month: 'short' })}
         </div>
-        <div className="text-lg font-semibold leading-none text-gray-900">
+        <div className="text-2xl font-bold leading-none text-gray-900">
           {new Date(event.starts_at).getDate()}
         </div>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm text-gray-900 truncate">{event.title}</p>
+        <p className="font-semibold text-sm text-gray-900 truncate">{event.title}</p>
         <p className="text-xs text-gray-500 mt-0.5">
           {formatDateFull(event.starts_at)} · {formatTime(event.starts_at)}
         </p>
-        <p className="text-xs text-gray-400 truncate">{event.location}</p>
+        {event.location && <p className="text-xs text-gray-400 truncate mt-0.5">{event.location}</p>}
       </div>
+      {rsvpStatus && (
+        <div className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+          rsvpStatus === 'yes' ? 'bg-emerald-100 text-emerald-700'
+          : rsvpStatus === 'maybe' ? 'bg-amber-100 text-amber-700'
+          : 'bg-gray-100 text-gray-500'
+        }`}>
+          {rsvpStatus === 'yes' ? 'Going' : rsvpStatus === 'maybe' ? 'Maybe' : 'Declined'}
+        </div>
+      )}
     </Link>
   )
 }

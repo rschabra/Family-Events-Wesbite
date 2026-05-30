@@ -17,6 +17,9 @@ function toDateInput(iso: string | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+const inputClass = 'mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none transition-all'
+const labelSpanClass = 'text-xs font-semibold text-gray-600 uppercase tracking-wide'
+
 export default function EventModal({
   open,
   event,
@@ -80,7 +83,7 @@ export default function EventModal({
     else setter(val)
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.SyntheticEvent) {
     e.preventDefault()
     setStatus('saving')
     setErrorMsg('')
@@ -99,7 +102,6 @@ export default function EventModal({
         ends_at: editingHoliday ? null : (endsAt ? new Date(endsAt).toISOString() : null),
       }
     } else if (eventType === 'holiday') {
-      // Use noon UTC on the selected date so the calendar renders on the right day
       body = {
         event_type: 'holiday',
         title,
@@ -145,34 +147,39 @@ export default function EventModal({
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-xs transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
       <div
-        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {isEditing ? 'Edit' : eventType === 'holiday' ? 'Add holiday' : 'New event'}
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
+          <h2 className="text-lg font-bold text-gray-900">
+            {isEditing ? 'Edit event' : eventType === 'holiday' ? 'Add holiday' : 'New event'}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-xl leading-none" aria-label="Close">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xl leading-none"
+            aria-label="Close"
+          >
             ×
           </button>
         </div>
 
-        <form onSubmit={submit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+        <form onSubmit={submit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-          {/* Event / Holiday toggle — only on create */}
+          {/* Event / Holiday toggle */}
           {!isEditing && (
-            <div className="flex rounded-md border border-gray-200 overflow-hidden text-sm">
+            <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm bg-gray-50">
               {(['event', 'holiday'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setEventType(t)}
-                  className={`flex-1 py-2 font-medium capitalize transition-colors ${
-                    eventType === t ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'
+                  className={`flex-1 py-2.5 font-semibold capitalize transition-colors ${
+                    eventType === t ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
                   {t === 'holiday' ? 'Holiday / Birthday' : 'Event'}
@@ -182,13 +189,13 @@ export default function EventModal({
           )}
 
           <label className="block">
-            <span className="text-sm text-gray-700">Title</span>
+            <span className={labelSpanClass}>Title</span>
             <input
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={eventType === 'holiday' ? "Mom's Birthday" : "Mom's Birthday Dinner"}
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+              className={inputClass}
             />
           </label>
 
@@ -196,46 +203,46 @@ export default function EventModal({
           {(isEditing ? event?.event_type !== 'holiday' : eventType === 'event') && (
             <>
               <label className="block">
-                <span className="text-sm text-gray-700">Description</span>
+                <span className={labelSpanClass}>Description</span>
                 <textarea
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   placeholder="What's the occasion?"
-                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none resize-none"
+                  className={`${inputClass} resize-none`}
                 />
               </label>
 
               <label className="block">
-                <span className="text-sm text-gray-700">Location</span>
+                <span className={labelSpanClass}>Location</span>
                 <input
                   required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="123 Main St, Springfield"
-                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+                  className={inputClass}
                 />
               </label>
 
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-sm text-gray-700">Starts</span>
+                  <span className={labelSpanClass}>Starts</span>
                   <input
                     required
                     type="datetime-local"
                     value={startsAt}
                     onChange={(e) => handleDateTimeChange(e.target.value, setStartsAt)}
-                    className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+                    className={inputClass}
                   />
                 </label>
                 <label className="block">
-                  <span className="text-sm text-gray-700">Ends (optional)</span>
+                  <span className={labelSpanClass}>Ends (optional)</span>
                   <input
                     type="datetime-local"
                     value={endsAt}
                     onChange={(e) => handleDateTimeChange(e.target.value, setEndsAt)}
-                    className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+                    className={inputClass}
                   />
                 </label>
               </div>
@@ -245,13 +252,13 @@ export default function EventModal({
           {/* Holiday date picker */}
           {((!isEditing && eventType === 'holiday') || (isEditing && event?.event_type === 'holiday')) && (
             <label className="block">
-              <span className="text-sm text-gray-700">Date</span>
+              <span className={labelSpanClass}>Date</span>
               <input
                 required
                 type="date"
                 value={holidayDate}
                 onChange={(e) => setHolidayDate(e.target.value)}
-                className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+                className={inputClass}
               />
             </label>
           )}
@@ -259,11 +266,11 @@ export default function EventModal({
           {/* Group picker */}
           {!isEditing && groups && groups.length > 0 && (
             <label className="block">
-              <span className="text-sm text-gray-700">Group</span>
+              <span className={labelSpanClass}>Group</span>
               <select
                 value={accessCodeId}
                 onChange={(e) => setAccessCodeId(e.target.value)}
-                className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+                className={inputClass}
               >
                 <option value="">Everyone (all your groups)</option>
                 {groups.map((g) => (
@@ -276,34 +283,38 @@ export default function EventModal({
           {/* Blast message */}
           {!isEditing && (
             <label className="block">
-              <span className="text-sm text-gray-700">
-                {eventType === 'holiday' ? 'Blast message' : 'Announcement message'}
-                <span className="text-gray-400 font-normal">
-                  {eventType === 'holiday'
-                    ? ' — sent at 9 AM on the day'
-                    : selectedGroupName
-                    ? ` — sent to ${selectedGroupName} via email`
-                    : ' — sent to all your groups via email'}
-                </span>
+              <span className={labelSpanClass}>
+                {eventType === 'holiday' ? 'Blast message' : 'Announcement'}
+              </span>
+              <span className="block text-xs text-gray-400 mt-0.5 mb-1.5">
+                {eventType === 'holiday'
+                  ? 'Sent at 9 AM on the day'
+                  : selectedGroupName
+                  ? `Sent to ${selectedGroupName} via email`
+                  : 'Sent to all your groups via email'}
               </span>
               <textarea
                 required
                 value={announcement}
                 onChange={(e) => setAnnouncement(e.target.value)}
                 rows={3}
-                placeholder={eventType === 'holiday' ? 'Happy Birthday! 🎂 Wishing you a wonderful day!' : 'Hey everyone! You\'re invited to…'}
-                className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none resize-none"
+                placeholder={eventType === 'holiday' ? 'Happy Birthday! 🎂 Wishing you a wonderful day!' : "Hey everyone! You're invited to…"}
+                className={`${inputClass} resize-none`}
               />
             </label>
           )}
 
-          {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
+          {errorMsg && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl p-3">
+              {errorMsg}
+            </p>
+          )}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-1 pb-6">
             <button
               type="submit"
               disabled={status === 'saving'}
-              className="flex-1 rounded-md bg-gray-900 text-white py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+              className="flex-1 rounded-xl bg-indigo-600 text-white py-2.5 text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-sm"
             >
               {status === 'saving'
                 ? isEditing ? 'Saving…' : 'Creating…'
@@ -314,7 +325,7 @@ export default function EventModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
