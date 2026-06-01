@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { AccessCode, FamilyEvent } from '@/lib/types'
+import { THEME_NAMES, THEMES } from '@/lib/themes'
 
 function toDatetimeLocal(iso: string | null | undefined): string {
   if (!iso) return ''
@@ -46,6 +47,7 @@ export default function EventModal({
   const [endsAt, setEndsAt] = useState('')
   const [announcement, setAnnouncement] = useState('')
   const [accessCodeId, setAccessCodeId] = useState<string>('')
+  const [color, setColor] = useState<string>('indigo')
   const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -61,16 +63,19 @@ export default function EventModal({
         setEndsAt(toDatetimeLocal(event.ends_at))
         setHolidayDate(toDateInput(event.starts_at))
         setAccessCodeId(event.access_code_id ?? '')
+        setColor(event.color ?? 'indigo')
       } else if (initialDate) {
         setStartsAt(`${initialDate}T12:00`)
         setEndsAt(`${initialDate}T23:59`)
         setHolidayDate(initialDate)
         setAccessCodeId('')
+        setColor('indigo')
       } else {
         setStartsAt('')
         setEndsAt('')
         setHolidayDate('')
         setAccessCodeId('')
+        setColor('indigo')
       }
       setAnnouncement('')
       setStatus('idle')
@@ -100,6 +105,7 @@ export default function EventModal({
           ? new Date(`${holidayDate}T12:00:00`).toISOString()
           : new Date(startsAt).toISOString(),
         ends_at: editingHoliday ? null : (endsAt ? new Date(endsAt).toISOString() : null),
+        color,
       }
     } else if (eventType === 'holiday') {
       body = {
@@ -108,6 +114,7 @@ export default function EventModal({
         starts_at: new Date(`${holidayDate}T12:00:00`).toISOString(),
         announcement,
         access_code_id: accessCodeId || null,
+        color,
       }
     } else {
       body = {
@@ -119,6 +126,7 @@ export default function EventModal({
         ends_at: endsAt ? new Date(endsAt).toISOString() : null,
         announcement,
         access_code_id: accessCodeId || null,
+        color,
       }
     }
 
@@ -198,6 +206,26 @@ export default function EventModal({
               className={inputClass}
             />
           </label>
+
+          {/* Color picker */}
+          <div className="space-y-2">
+            <span className={labelSpanClass}>Color</span>
+            <div className="flex gap-2 flex-wrap mt-1.5">
+              {THEME_NAMES.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  title={THEMES[name].label}
+                  onClick={() => setColor(name)}
+                  className={`w-7 h-7 rounded-full transition-all ${THEMES[name].swatch} ${
+                    color === name
+                      ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
+                      : 'hover:scale-105 opacity-70 hover:opacity-100'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
 
           {/* Event-only fields */}
           {(isEditing ? event?.event_type !== 'holiday' : eventType === 'event') && (

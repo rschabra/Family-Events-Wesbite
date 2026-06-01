@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     announcement?: string
     access_code_id?: string | null
     event_type?: string
+    color?: string
   }
 
   try {
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   }
 
-  const { title, description, location, starts_at, ends_at, announcement, access_code_id, event_type = 'event' } = body
+  const { title, description, location, starts_at, ends_at, announcement, access_code_id, event_type = 'event', color = 'indigo' } = body
 
   if (!title || !starts_at || !announcement) {
     return NextResponse.json(
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
       starts_at,
       ends_at: ends_at || null,
       event_type,
+      color,
       created_by: user.id,
       access_code_id: access_code_id ?? null,
     })

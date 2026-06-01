@@ -53,6 +53,7 @@ create table if not exists public.events (
   starts_at    timestamptz not null,
   ends_at      timestamptz,
   event_type   text not null default 'event', -- 'event' | 'holiday'
+  color        text not null default 'indigo', -- theme color name
   created_by   uuid not null references public.profiles(id) on delete cascade,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
@@ -62,6 +63,7 @@ create table if not exists public.events (
 alter table public.events alter column location drop not null;
 alter table public.events alter column description drop not null;
 alter table public.events add column if not exists event_type text not null default 'event';
+alter table public.events add column if not exists color text not null default 'indigo';
 
 create index if not exists events_starts_at_idx on public.events (starts_at);
 

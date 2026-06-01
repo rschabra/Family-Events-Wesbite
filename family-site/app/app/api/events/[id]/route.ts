@@ -19,6 +19,7 @@ export async function PATCH(
     location?: string
     starts_at?: string
     ends_at?: string | null
+    color?: string
   }
 
   try {
@@ -27,7 +28,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   }
 
-  const { title, description, location, starts_at, ends_at } = body
+  const { title, description, location, starts_at, ends_at, color } = body
   if (!title || !starts_at) {
     return NextResponse.json(
       { error: 'Title and start time are required.' },
@@ -44,6 +45,7 @@ export async function PATCH(
       location: location?.trim() ?? null,
       starts_at,
       ends_at: ends_at || null,
+      ...(color ? { color } : {}),
     })
     .eq('id', id)
     .select()

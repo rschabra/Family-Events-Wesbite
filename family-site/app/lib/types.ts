@@ -42,6 +42,7 @@ export interface FamilyEvent {
   starts_at: string
   ends_at: string | null
   event_type: EventType
+  color: string
   created_by: string
   access_code_id: string | null
   created_at: string

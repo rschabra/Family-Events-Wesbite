@@ -18,6 +18,17 @@ export async function sendEmail({
   if (error) throw new Error(error.message)
 }
 
+// Send up to 100 emails in a single API call — avoids per-email rate limits.
+export async function sendEmailBatch(
+  emails: { to: string; subject: string; html: string }[]
+) {
+  if (emails.length === 0) return
+  const { error } = await resend.batch.send(
+    emails.map(({ to, subject, html }) => ({ from: FROM, to, subject, html }))
+  )
+  if (error) throw new Error(error.message)
+}
+
 export function buildBlastHtml({
   eventTitle,
   message,

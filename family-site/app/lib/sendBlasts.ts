@@ -1,5 +1,5 @@
 import { createAdminClient } from './supabase/server'
-import { sendEmail, buildBlastHtml } from './email'
+import { sendEmailBatch, buildBlastHtml } from './email'
 import { sendSms, buildSmsBody } from './sms'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -128,23 +128,34 @@ export async function sendDueBlasts(): Promise<{ sent: number; failed: number }>
       eventUrl,
     })
 
-    let emailFailed = false
+    // Collect all email and SMS jobs before sending so we can batch emails
+    // in a single Resend API call instead of one per recipient (avoids rate limits).
+    const emailBatch: { to: string; subject: string; html: string }[] = []
+    const smsJobs: { to: string }[] = []
+
     for (const profile of profiles as ProfileRow[]) {
       if (profile.notify_email && profile.email) {
-        try {
-          await sendEmail({ to: profile.email, subject, html })
-        } catch (err) {
-          console.error(`sendDueBlasts: email failed for ${profile.email}`, err)
-          emailFailed = true
-        }
+        emailBatch.push({ to: profile.email, subject, html })
       }
       if (twilioConfigured && profile.notify_sms && profile.phone) {
-        try {
-          await sendSms({ to: profile.phone, body: smsBody })
-        } catch (err) {
-          // SMS failure doesn't fail the blast — email is the primary channel
-          console.error(`sendDueBlasts: SMS failed for ${profile.phone}`, err)
-        }
+        smsJobs.push({ to: profile.phone })
+      }
+    }
+
+    let emailFailed = false
+    try {
+      await sendEmailBatch(emailBatch)
+    } catch (err) {
+      console.error(`sendDueBlasts: batch email failed`, err)
+      emailFailed = true
+    }
+
+    for (const { to } of smsJobs) {
+      try {
+        await sendSms({ to, body: smsBody })
+      } catch (err) {
+        // SMS failure doesn't fail the blast — email is the primary channel
+        console.error(`sendDueBlasts: SMS failed for ${to}`, err)
       }
     }
 

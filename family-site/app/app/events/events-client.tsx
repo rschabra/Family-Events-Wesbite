@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { AccessCode, FamilyEvent, RsvpStatus } from '@/lib/types'
+import { getTheme } from '@/lib/themes'
 import EventModal from './event-modal'
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -75,13 +76,13 @@ function groupByMonth(events: FamilyEvent[]) {
   return groups
 }
 
-function chipClasses(status: RsvpStatus | undefined, isHoliday: boolean): string {
+function chipClasses(status: RsvpStatus | undefined, isHoliday: boolean, color: string): string {
   if (isHoliday) return 'bg-purple-100 text-purple-700 hover:bg-purple-200 italic'
   switch (status) {
     case 'yes':   return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
     case 'maybe': return 'bg-amber-100 text-amber-800 hover:bg-amber-200'
     case 'no':    return 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-    default:      return 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+    default:      return getTheme(color).chip
   }
 }
 
@@ -363,7 +364,7 @@ function MonthView({
                     key={e.id}
                     href={`/events/${e.id}`}
                     onClick={(ev) => ev.stopPropagation()}
-                    className={`block truncate text-xs rounded-md px-1.5 py-0.5 font-medium transition-colors ${chipClasses(myRsvps[e.id], e.event_type === 'holiday')}`}
+                    className={`block truncate text-xs rounded-md px-1.5 py-0.5 font-medium transition-colors ${chipClasses(myRsvps[e.id], e.event_type === 'holiday', e.color)}`}
                   >
                     {e.title}
                   </Link>
@@ -452,13 +453,13 @@ function ListView({
   )
 }
 
-function listBorderClass(status: RsvpStatus | undefined, isHoliday: boolean): string {
+function listBorderClass(status: RsvpStatus | undefined, isHoliday: boolean, color: string): string {
   if (isHoliday) return 'border-l-4 border-l-purple-400'
   switch (status) {
     case 'yes':   return 'border-l-4 border-l-emerald-400'
     case 'maybe': return 'border-l-4 border-l-amber-400'
     case 'no':    return 'border-l-4 border-l-gray-300'
-    default:      return 'border-l-4 border-l-indigo-300'
+    default:      return `border-l-4 ${getTheme(color).listBorder}`
   }
 }
 
@@ -467,7 +468,7 @@ function EventListItem({ event, rsvpStatus }: { event: FamilyEvent; rsvpStatus: 
   return (
     <Link
       href={`/events/${event.id}`}
-      className={`flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 hover:border-gray-200 hover:shadow-sm transition-all ${listBorderClass(rsvpStatus, isHoliday)}`}
+      className={`flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 hover:border-gray-200 hover:shadow-sm transition-all ${listBorderClass(rsvpStatus, isHoliday, event.color)}`}
     >
       <div className="text-center min-w-10 pt-0.5">
         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">

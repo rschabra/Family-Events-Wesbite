@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import type { Blast, FamilyEvent, Profile, RsvpWithProfile } from '@/lib/types'
+import { getTheme } from '@/lib/themes'
 import EventDetailClient from './event-detail-client'
 
 export default async function EventPage({
@@ -39,9 +40,11 @@ export default async function EventPage({
 
   if (eventError || !event) notFound()
 
+  const theme = getTheme(event.color)
+
   return (
-    <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-6">
-      <Link href="/events" className="text-sm text-gray-400 hover:text-gray-700">
+    <main className={`flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-5 ${theme.pageBg}`}>
+      <Link href="/events" className="text-sm text-gray-400 hover:text-gray-700 inline-block">
         ← All events
       </Link>
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Blast, FamilyEvent, RsvpStatus, RsvpWithProfile } from '@/lib/types'
+import { getTheme } from '@/lib/themes'
 import EventModal from '../event-modal'
 
 function localDatetimeNow() {
@@ -40,6 +41,7 @@ export default function EventDetailClient({
 }) {
   const router = useRouter()
 
+  const theme = getTheme(event.color)
   const isHoliday = event.event_type === 'holiday'
   const myRsvp = rsvps.find((r) => r.user_id === userId)
   const canEdit = event.created_by === userId || isAdmin
@@ -136,53 +138,55 @@ export default function EventDetailClient({
 
   return (
     <div className="space-y-5">
-      {/* Event header card */}
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 space-y-3">
-        {isHoliday && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold px-2.5 py-1">
-            Holiday / Birthday
-          </span>
-        )}
-        <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
+      {/* Event header card — themed gradient */}
+      <div className="rounded-2xl overflow-hidden shadow-sm">
+        <div className={`bg-linear-to-br ${theme.headerFrom} ${theme.headerTo} p-6 space-y-3`}>
+          {isHoliday && (
+            <span className="inline-flex items-center rounded-full bg-white/20 text-white text-xs font-semibold px-2.5 py-1">
+              Holiday / Birthday
+            </span>
+          )}
+          <h1 className="text-2xl font-bold text-white">{event.title}</h1>
 
-        <div className="space-y-1.5 text-sm text-gray-600">
-          {isHoliday ? (
-            <p className="font-medium text-gray-700">
-              {new Date(event.starts_at).toLocaleDateString('en-US', {
-                weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-              })}
-            </p>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span className="font-medium text-gray-800">{formatDatetime(event.starts_at)}</span>
-              </div>
-              {event.ends_at && (
-                <div className="flex items-center gap-2 pl-6 text-gray-500">
-                  <span>Ends {formatTime(event.ends_at)}</span>
-                </div>
-              )}
-              {event.location && (
+          <div className="space-y-1.5 text-sm text-white/90">
+            {isHoliday ? (
+              <p className="font-medium">
+                {new Date(event.starts_at).toLocaleDateString('en-US', {
+                  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+                })}
+              </p>
+            ) : (
+              <>
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <svg className="w-4 h-4 text-white/60 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-gray-600">{event.location}</span>
+                  <span className="font-medium">{formatDatetime(event.starts_at)}</span>
                 </div>
-              )}
-            </>
+                {event.ends_at && (
+                  <div className="flex items-center gap-2 pl-6 text-white/70">
+                    <span>Ends {formatTime(event.ends_at)}</span>
+                  </div>
+                )}
+                {event.location && (
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-white/60 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{event.location}</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {event.description && (
+            <p className="text-sm text-white/80 pt-2 whitespace-pre-wrap leading-relaxed border-t border-white/20 mt-1">
+              {event.description}
+            </p>
           )}
         </div>
-
-        {event.description && (
-          <p className="text-sm text-gray-700 pt-1 whitespace-pre-wrap leading-relaxed border-t border-gray-50 mt-3">
-            {event.description}
-          </p>
-        )}
       </div>
 
       {/* RSVP section */}
